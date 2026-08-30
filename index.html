@@ -4,654 +4,345 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#080b12" />
-
   <title>CSFloat Inspector</title>
 
   <style>
     :root {
-      --bg: #070a10;
-      --card: #0d131e;
+      --bg:     #070a10;
       --border: rgba(148, 163, 184, 0.14);
       --accent: #818cf8;
-      --text: #eef2f7;
-      --muted: #707c90;
+      --muted:  #707c90;
+
+      /* driven by JS after skin category is known */
+      --card-w: 720px;
+      --card-h: 400px;
     }
 
-    * {
-      box-sizing: border-box;
-    }
-
-    html,
-    body {
-      width: 100%;
-      min-height: 100%;
-      margin: 0;
-    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { width: 100%; min-height: 100%; margin: 0; }
 
     body {
-      font-family:
-        Inter,
-        ui-sans-serif,
-        system-ui,
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        sans-serif;
-
-      color: var(--text);
-
+      font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+      color: #eef2f7;
       background:
-        radial-gradient(
-          circle at 50% 15%,
-          rgba(99, 102, 241, 0.10),
-          transparent 35%
-        ),
-        linear-gradient(
-          180deg,
-          #0b0f17 0%,
-          #070a10 100%
-        );
-
+        radial-gradient(circle at 50% 15%, rgba(99,102,241,.10), transparent 35%),
+        linear-gradient(180deg, #0b0f17, #070a10);
       overflow: hidden;
     }
 
+    /* subtle grid overlay */
     body::before {
       content: "";
       position: fixed;
       inset: 0;
       pointer-events: none;
-
-      opacity: 0.18;
-
+      opacity: .18;
       background-image:
-        linear-gradient(
-          rgba(255,255,255,.018) 1px,
-          transparent 1px
-        ),
-        linear-gradient(
-          90deg,
-          rgba(255,255,255,.018) 1px,
-          transparent 1px
-        );
-
+        linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px);
       background-size: 32px 32px;
-
-      mask-image:
-        linear-gradient(
-          to bottom,
-          black,
-          transparent 85%
-        );
+      mask-image: linear-gradient(to bottom, black, transparent 85%);
     }
 
     .page {
       min-height: 100vh;
-
       display: flex;
       align-items: center;
       justify-content: center;
-
       padding: 24px;
     }
 
+    /* ─── card ──────────────────────────────────────────────── */
     .card {
       position: relative;
+      width:  min(var(--card-w), 100%);
+      height: min(var(--card-h), 85vh);
 
-      width: min(760px, 100%);
-      height: min(560px, 85vh);
+      /* smoothly morph between shapes */
+      transition:
+        width  .55s cubic-bezier(.4, 0, .2, 1),
+        height .55s cubic-bezier(.4, 0, .2, 1);
 
       border-radius: 24px;
-
-      background:
-        linear-gradient(
-          180deg,
-          rgba(18, 24, 37, 0.96),
-          rgba(9, 13, 21, 0.98)
-        );
-
+      background: linear-gradient(180deg, rgba(18,24,37,.96), rgba(9,13,21,.98));
       border: 1px solid var(--border);
-
       box-shadow:
-        0 40px 100px rgba(0, 0, 0, 0.55),
+        0 40px 100px rgba(0,0,0,.55),
         inset 0 0 0 1px rgba(255,255,255,.015);
-
       overflow: hidden;
-
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }
 
+    /* top shimmer line */
     .card::before {
       content: "";
-
       position: absolute;
-
-      top: 0;
-      left: 10%;
-      right: 10%;
-
+      top: 0; left: 10%; right: 10%;
       height: 1px;
-
-      background:
-        linear-gradient(
-          90deg,
-          transparent,
-          rgba(129,140,248,.65),
-          transparent
-        );
+      background: linear-gradient(90deg, transparent, rgba(129,140,248,.65), transparent);
     }
 
-    /*
-      Large image area.
-      The weapon is centered and never cropped.
-    */
+    /* ─── image area ─────────────────────────────────────────── */
     .image-area {
       position: absolute;
-
       inset: 0;
-
       display: flex;
       align-items: center;
       justify-content: center;
+    }
 
-      padding: 40px;
+    /* soft accent glow behind the weapon */
+    .image-glow {
+      position: absolute;
+      width: 65%; height: 55%;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(99,102,241,.09), transparent 70%);
+      filter: blur(28px);
+      pointer-events: none;
     }
 
     #itemImage {
-      display: none;
+      display: none;         /* shown only after onload */
+      position: relative;    /* above glow */
+      z-index: 1;
 
+      /* fill the card, never crop */
       width: 100%;
       height: 100%;
-
-      /*
-        IMPORTANT:
-        contain = entire weapon remains visible
-        no cropping
-      */
       object-fit: contain;
-
-      object-position: center center;
-
-      padding: 20px;
+      object-position: center;
+      padding: 24px;
 
       filter:
-        drop-shadow(0 24px 35px rgba(0,0,0,.60))
-        drop-shadow(0 0 25px rgba(99,102,241,.08));
+        drop-shadow(0 22px 34px rgba(0,0,0,.65))
+        drop-shadow(0  0   22px rgba(99,102,241,.07));
 
       user-select: none;
       -webkit-user-drag: none;
 
-      animation: itemIn .45s ease forwards;
+      animation: itemIn .4s ease forwards;
     }
 
     @keyframes itemIn {
-      from {
-        opacity: 0;
-        transform: scale(.94);
-      }
-
-      to {
-        opacity: 1;
-        transform: scale(1);
-      }
+      from { opacity: 0; transform: scale(.94); }
+      to   { opacity: 1; transform: scale(1);   }
     }
 
-    /*
-      Very subtle glow behind the weapon.
-    */
-    .image-glow {
-      position: absolute;
-
-      width: 60%;
-      height: 45%;
-
-      border-radius: 50%;
-
-      background:
-        radial-gradient(
-          circle,
-          rgba(99,102,241,.10),
-          transparent 70%
-        );
-
-      filter: blur(25px);
-
-      pointer-events: none;
-    }
-
+    /* ─── placeholder ────────────────────────────────────────── */
     .placeholder {
       position: absolute;
-
       inset: 0;
-
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-
-      flex-direction: column;
-
       gap: 9px;
-
       color: var(--muted);
-
-      text-align: center;
-
       font-size: 12px;
+      text-align: center;
+      z-index: 2;
     }
 
     .placeholder-icon {
-      width: 44px;
-      height: 44px;
-
+      width: 44px; height: 44px;
       border-radius: 14px;
-
-      display: grid;
-      place-items: center;
-
+      display: grid; place-items: center;
       border: 1px solid var(--border);
-
       background: rgba(255,255,255,.02);
-
       color: #8995a8;
-
       font-size: 20px;
     }
 
-    .placeholder strong {
-      color: #aeb7c7;
-      font-size: 13px;
-    }
+    .placeholder strong { color: #aeb7c7; font-size: 13px; }
 
-    /*
-      Small loading indicator.
-    */
     .loading-dot {
-      width: 6px;
-      height: 6px;
-
+      width: 6px; height: 6px;
       border-radius: 50%;
-
       background: var(--accent);
-
-      box-shadow:
-        0 0 14px rgba(129,140,248,.7);
-
+      box-shadow: 0 0 14px rgba(129,140,248,.7);
       animation: pulse 1.2s infinite;
     }
 
     @keyframes pulse {
-      0%,
-      100% {
-        opacity: .35;
-        transform: scale(.8);
-      }
-
-      50% {
-        opacity: 1;
-        transform: scale(1);
-      }
+      0%, 100% { opacity: .35; transform: scale(.8); }
+      50%       { opacity:  1; transform: scale(1);  }
     }
 
-    /*
-      Mobile
-    */
+    /* ─── responsive ─────────────────────────────────────────── */
     @media (max-width: 600px) {
-      .page {
-        padding: 12px;
-      }
-
-      .card {
-        width: 100%;
-        height: 70vh;
-
-        min-height: 360px;
-
-        border-radius: 20px;
-      }
-
-      .image-area {
-        padding: 20px;
-      }
-
-      #itemImage {
-        padding: 8px;
-      }
+      .page { padding: 12px; }
+      .card { border-radius: 20px; }
+      #itemImage { padding: 12px; }
     }
   </style>
 </head>
 
 <body>
-
   <main class="page">
-
-    <section class="card">
+    <section class="card" id="card">
 
       <div class="image-glow"></div>
 
       <div class="image-area">
+        <img id="itemImage" alt="CS2 item" />
 
-        <img
-          id="itemImage"
-          alt="CS2 item"
-        />
-
-        <div
-          id="placeholder"
-          class="placeholder"
-        >
-          <div class="placeholder-icon">
-            ◈
-          </div>
-
-          <strong>
-            Loading item
-          </strong>
-
+        <div id="placeholder" class="placeholder">
+          <div class="placeholder-icon">◈</div>
+          <strong>Loading item</strong>
           <div class="loading-dot"></div>
         </div>
-
       </div>
 
     </section>
-
   </main>
 
-
   <script type="module">
+    /* ── weapon category → card aspect ratio ─────────────────
+       Rifles / snipers = wide landscape rectangle
+       Pistols / SMGs   = medium
+       Knives / Gloves  = close to square
+    ────────────────────────────────────────────────────────── */
+    const CATEGORY_ASPECT = {
+      "Sniper Rifle": 3.1,
+      "Rifle":        2.6,
+      "Heavy":        2.4,
+      "SMG":          2.1,
+      "Pistol":       1.9,
+      "Knife":        1.4,
+      "Gloves":       1.25,
+    };
+    const DEFAULT_ASPECT = 2.2;
 
-    const BASE =
-      "https://raw.githubusercontent.com/ByMykel/CSGO-API/main/public/api/en";
+    // Base width the card targets (px). On narrow viewports the card
+    // is constrained to 100% via the CSS min(), so we derive height
+    // from the *actual rendered* width, not this constant.
+    const BASE_W = 720;
 
+    function applyAspect(aspect) {
+      const card    = document.getElementById("card");
+      const padding = 48; // 24px each side
+      const vw      = Math.min(window.innerWidth - padding, BASE_W);
+      const vh85    = window.innerHeight * 0.85;
+
+      // Ideal height for this ratio at this viewport width
+      const ideal = vw / aspect;
+      const h = Math.min(ideal, vh85);
+      // If height was clamped by viewport, derive the matching width
+      const w = h === vh85 ? h * aspect : vw;
+
+      card.style.setProperty("--card-w", w + "px");
+      card.style.setProperty("--card-h", h + "px");
+    }
+
+    /* ── ByMykel catalog ──────────────────────────────────── */
+    const BASE = "https://raw.githubusercontent.com/ByMykel/CSGO-API/main/public/api/en";
     let skinCache = null;
 
-
     async function getSkins() {
-
       if (!skinCache) {
-
-        const response =
-          await fetch(
-            `${BASE}/skins.json`,
-            {
-              cache: "force-cache"
-            }
-          );
-
-        if (!response.ok) {
-          throw new Error(
-            `Failed to load skins`
-          );
-        }
-
-        skinCache =
-          await response.json();
+        const r = await fetch(`${BASE}/skins.json`, { cache: "force-cache" });
+        if (!r.ok) throw new Error("Failed to load skins");
+        skinCache = await r.json();
       }
-
       return skinCache;
     }
 
-
-    async function findSkin(
-      defindex,
-      paintindex
-    ) {
-
-      if (
-        defindex == null ||
-        paintindex == null
-      ) {
-        return null;
-      }
-
-      const skins =
-        await getSkins();
-
-      return (
-        skins.find(
-          skin =>
-            Number(
-              skin?.weapon?.weapon_id
-            ) === Number(defindex) &&
-
-            Number(
-              skin?.paint_index
-            ) === Number(paintindex)
-        ) || null
-      );
+    async function findSkin(defindex, paintindex) {
+      if (defindex == null || paintindex == null) return null;
+      const skins = await getSkins();
+      return skins.find(s =>
+        Number(s?.weapon?.weapon_id) === Number(defindex) &&
+        Number(s?.paint_index)       === Number(paintindex)
+      ) || null;
     }
 
-
-    /*
-      Modern CS2 inspect decoder
-    */
+    /* ── inspect decoder ─────────────────────────────────── */
     async function decodeInspect(link) {
-
       try {
-
-        const module =
-          await import(
-            "https://esm.sh/@csfloat/cs2-inspect-serializer@1.1.6"
-          );
-
-        if (
-          typeof module.decodeLink ===
-          "function"
-        ) {
-
-          const data =
-            await module.decodeLink(link);
-
-          if (
-            data &&
-            typeof data === "object"
-          ) {
-            return data;
-          }
+        const mod = await import("https://esm.sh/@csfloat/cs2-inspect-serializer@1.1.6");
+        if (typeof mod.decodeLink === "function") {
+          const data = await mod.decodeLink(link);
+          if (data && typeof data === "object") return data;
         }
-
-      } catch (error) {
-
-        console.debug(
-          "Inspect decoder unavailable",
-          error
-        );
-
+      } catch (e) {
+        console.debug("Decoder unavailable", e);
       }
-
       return {};
     }
 
-
-    /*
-      Open the Steam inspect link.
-      This remains automatic, but there is
-      no visible inspect UI.
-    */
+    /* ── Steam launcher ──────────────────────────────────── */
     function openSteam(link) {
-
-      try {
-
-        window.location.href = link;
-
-      } catch (error) {
-
-        console.error(
-          "Steam launch failed",
-          error
-        );
-
-      }
+      try { window.location.href = link; }
+      catch (e) { console.error("Steam launch failed", e); }
     }
 
-
+    /* ── main ────────────────────────────────────────────── */
     async function init() {
+      // Start at a neutral default size while we load
+      applyAspect(DEFAULT_ASPECT);
 
-      const params =
-        new URLSearchParams(
-          window.location.search
-        );
-
-      const inspectLink =
-        params.get("link");
-
+      const params      = new URLSearchParams(window.location.search);
+      const inspectLink = params.get("link");
 
       if (!inspectLink) {
-
-        document.querySelector(
-          "#placeholder strong"
-        ).textContent =
-          "No inspect link";
-
-        document.querySelector(
-          ".loading-dot"
-        ).style.display =
-          "none";
-
+        document.querySelector("#placeholder strong").textContent = "No inspect link";
+        document.querySelector(".loading-dot").style.display = "none";
         return;
       }
 
-
-      const link =
-        inspectLink.trim();
-
+      const link = inspectLink.trim();
 
       try {
+        const data = await decodeInspect(link);
 
-        /*
-          Decode inspect link
-        */
-        const data =
-          await decodeInspect(link);
+        const defindex   = data.defindex   ?? data.def_index   ?? null;
+        const paintindex = data.paintindex  ?? data.paint_index  ?? null;
+        const skin       = await findSkin(defindex, paintindex);
 
+        // ── Resize card to match weapon category ────────────
+        const category = skin?.category?.name ?? null;
+        const aspect   = CATEGORY_ASPECT[category] ?? DEFAULT_ASPECT;
+        applyAspect(aspect);
 
-        const defindex =
-          data.defindex ??
-          data.def_index ??
-          null;
-
-
-        const paintindex =
-          data.paintindex ??
-          data.paint_index ??
-          null;
-
-
-        /*
-          Find matching skin
-        */
-        const skin =
-          await findSkin(
-            defindex,
-            paintindex
-          );
-
-
-        /*
-          Load item image
-        */
+        // ── Load image ───────────────────────────────────────
         if (skin?.image) {
+          const img = document.getElementById("itemImage");
+          const ph  = document.getElementById("placeholder");
 
-          const image =
-            document.querySelector(
-              "#itemImage"
-            );
-
-          const placeholder =
-            document.querySelector(
-              "#placeholder"
-            );
-
-
-          image.onload = () => {
-
-            /*
-              Force image to be shown
-              only after it has loaded.
-            */
-            image.style.display =
-              "block";
-
-            placeholder.style.display =
-              "none";
-
+          img.onload = () => {
+            ph.style.display  = "none";
+            img.style.display = "block";
           };
 
-
-          image.onerror = () => {
-
-            placeholder.querySelector(
-              "strong"
-            ).textContent =
-              "Image unavailable";
-
-            placeholder.querySelector(
-              ".loading-dot"
-            ).style.display =
-              "none";
-
+          img.onerror = () => {
+            ph.querySelector("strong").textContent = "Image unavailable";
+            ph.querySelector(".loading-dot").style.display = "none";
           };
 
-
-          image.src =
-            skin.image;
-
+          img.src = skin.image;
         } else {
-
-          document.querySelector(
-            "#placeholder strong"
-          ).textContent =
-            "Item preview unavailable";
-
-          document.querySelector(
-            ".loading-dot"
-          ).style.display =
-            "none";
+          document.querySelector("#placeholder strong").textContent =
+            category ? "Preview unavailable" : "Item preview unavailable";
+          document.querySelector(".loading-dot").style.display = "none";
         }
 
+        setTimeout(() => openSteam(link), 700);
 
-        /*
-          Automatically launch Steam shortly
-          after the item has loaded.
-        */
-        setTimeout(
-          () => openSteam(link),
-          700
-        );
-
-
-      } catch (error) {
-
-        console.error(error);
-
-        document.querySelector(
-          "#placeholder strong"
-        ).textContent =
-          "Unable to load item";
-
-        document.querySelector(
-          ".loading-dot"
-        ).style.display =
-          "none";
-
-
-        /*
-          Still open Steam even if
-          the catalog lookup fails.
-        */
-        setTimeout(
-          () => openSteam(link),
-          500
-        );
-
+      } catch (err) {
+        console.error(err);
+        document.querySelector("#placeholder strong").textContent = "Unable to load item";
+        document.querySelector(".loading-dot").style.display = "none";
+        setTimeout(() => openSteam(link), 500);
       }
-
     }
 
+    // Re-apply on window resize so the card stays proportional
+    window.addEventListener("resize", () => {
+      const card   = document.getElementById("card");
+      const aspect = parseFloat(card.dataset.aspect || DEFAULT_ASPECT);
+      if (!isNaN(aspect)) applyAspect(aspect);
+    });
 
     init();
-
   </script>
-
 </body>
 </html>
