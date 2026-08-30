@@ -100,10 +100,15 @@
       padding:26px 26px 22px;
     }
 
-    /* ── image box (height adapts per weapon category) ──────── */
+    /* ── image box: sizes itself to the real image's aspect ratio ──
+       Square-ish artwork (knives, gloves) → near-square box
+       Wide artwork (most guns) → shorter, wider rectangle
+       Falls back to a sensible default box before the image loads. ─ */
     .image-box{
-      height:var(--img-h, 230px);       /* JS sets this */
-      min-height:160px;
+      width:100%;
+      aspect-ratio: var(--img-ratio, 1.15);
+      min-height:150px;
+      max-height:320px;
       border:1px solid var(--border);
       border-radius:16px;
       background:
@@ -111,7 +116,7 @@
         linear-gradient(180deg,rgba(255,255,255,.014),rgba(255,255,255,.006));
       overflow:hidden;
       position:relative;
-      transition:height .5s cubic-bezier(.4,0,.2,1);
+      transition:aspect-ratio .45s cubic-bezier(.4,0,.2,1);
     }
 
     #itemImage{
@@ -302,7 +307,7 @@
     @media(max-width:680px){
       .shell{padding:20px 12px}
       .hero{grid-template-columns:1fr;gap:16px}
-      .image-box{height:var(--img-h-mobile, 200px) !important}
+      .image-box{max-height:260px}
       .top,.hero,.stickers-section,.actions-section{padding-left:18px;padding-right:18px}
       .divider{margin:0 18px}
       .footer{padding:0 18px 16px}
@@ -490,26 +495,21 @@
     $("floatBar").classList.add("visible");
   }
 
-  /* ── adaptive image-box height per weapon category ──────────
-     Wide weapons (rifles, snipers) → shorter box (wider feel)
-     Compact weapons (knives, gloves) → taller box (square feel)
+  /* ── adaptive image-box shape ─────────────────────────────────
+     Instead of guessing a height from the weapon category, we size
+     the box off the *actual* loaded image's pixel dimensions:
+       - roughly square artwork (knives, gloves, agents) → square box
+       - wide artwork (most guns)                        → wide rectangle
+     A neutral default is used until the real image reports its size.
   ──────────────────────────────────────────────────────────── */
-  const CATEGORY_IMG_H = {
-    "Sniper Rifle": 175,
-    "Rifle":        195,
-    "Heavy":        205,
-    "SMG":          215,
-    "Pistol":       228,
-    "Knife":        270,
-    "Gloves":       285,
-  };
-  const DEFAULT_IMG_H = 220;
+  const DEFAULT_RATIO = 1.15;   // width/height fallback before image loads
+  const MIN_RATIO = 0.85;       // clamp: don't let boxes get too tall/narrow
+  const MAX_RATIO = 1.9;        // clamp: don't let boxes get too flat/wide
 
-  function applyImageBoxHeight(category) {
-    const h = CATEGORY_IMG_H[category] ?? DEFAULT_IMG_H;
-    $("imageBox").style.setProperty("--img-h", h + "px");
-    // Mobile: slightly shorter across the board
-    $("imageBox").style.setProperty("--img-h-mobile", Math.round(h * 0.88) + "px");
+  function applyImageRatio(naturalW, naturalH) {
+    let ratio = (naturalW && naturalH) ? (naturalW / naturalH) : DEFAULT_RATIO;
+    ratio = Math.max(MIN_RATIO, Math.min(MAX_RATIO, ratio));
+    $("imageBox").style.setProperty("--img-ratio", ratio.toFixed(3));
   }
 
   /* ── ByMykel catalog ───────────────────────────────────────── */
@@ -646,6 +646,9 @@
     const params = new URLSearchParams(window.location.search);
     const raw    = params.get("link");
 
+    // Set a neutral default box shape until we know the real image size
+    applyImageRatio(null, null);
+
     if (!raw) {
       setText("itemName", "No inspect link");
       setText("itemSub",  "Open this page with a ?link= Steam inspect URI.");
@@ -684,9 +687,6 @@
       let skin = null;
       try { skin = await findSkin(defindex, paintindex); } catch(e) { console.debug("Skin lookup:", e); }
 
-      // ── Adaptive image box height ──────────────────────────
-      applyImageBoxHeight(skin?.category?.name ?? null);
-
       // ── Name + sub ─────────────────────────────────────────
       const name =
         data.full_item_name   ||
@@ -714,11 +714,15 @@
       setText("ownerId",    ownerId  || "—");
       setText("assetId",    assetId  || "—");
 
-      // ── Image ──────────────────────────────────────────────
+      // ── Image (box reshapes to match the real artwork once loaded) ──
       if (skin?.image) {
         const img = $("itemImage");
         const ph  = $("imgPlaceholder");
-        img.onload  = () => { ph.style.display = "none"; img.style.display = "block"; };
+        img.onload  = () => {
+          applyImageRatio(img.naturalWidth, img.naturalHeight);
+          ph.style.display = "none";
+          img.style.display = "block";
+        };
         img.onerror = () => {
           ph.querySelector("strong").textContent = "Image unavailable";
           ph.querySelector("span").textContent   = "Could not load artwork.";
