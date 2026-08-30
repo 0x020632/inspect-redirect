@@ -1,22 +1,677 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Opening Steam...</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#080b12" />
+  <title>CSFloat Inspector</title>
+  <style>
+    :root{
+      --bg:#070a10;
+      --bg-2:#0b0f17;
+      --panel:rgba(15,20,31,.88);
+      --panel-2:rgba(18,24,37,.82);
+      --border:rgba(148,163,184,.14);
+      --border-strong:rgba(129,140,248,.28);
+      --text:#f4f7fb;
+      --muted:#8995a8;
+      --muted-2:#626e82;
+      --accent:#6366f1;
+      --accent-2:#818cf8;
+      --accent-glow:rgba(99,102,241,.20);
+      --success:#34d399;
+      --danger:#fb7185;
+      --shadow:0 30px 90px rgba(0,0,0,.46);
+    }
+
+    *{box-sizing:border-box}
+    html,body{min-height:100%;margin:0}
+    body{
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 50% 15%, rgba(99,102,241,.10), transparent 32%),
+        radial-gradient(circle at 12% 80%, rgba(59,130,246,.05), transparent 28%),
+        linear-gradient(180deg,var(--bg-2),var(--bg));
+      overflow-x:hidden;
+    }
+
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      opacity:.24;
+      background-image:
+        linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);
+      background-size:32px 32px;
+      mask-image:linear-gradient(to bottom,black,transparent 75%);
+    }
+
+    .shell{
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:48px 18px;
+    }
+
+    .wrap{width:min(720px,100%)}
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin:0 0 18px 6px;
+      color:#aeb8c9;
+      font-size:12px;
+      font-weight:700;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+    }
+
+    .brand-dot{
+      width:9px;height:9px;border-radius:50%;
+      background:var(--accent-2);
+      box-shadow:0 0 20px var(--accent-glow);
+    }
+
+    .card{
+      position:relative;
+      overflow:hidden;
+      border:1px solid var(--border);
+      border-radius:24px;
+      background:linear-gradient(180deg,rgba(18,24,37,.93),rgba(10,14,22,.96));
+      box-shadow:var(--shadow),0 0 0 1px rgba(255,255,255,.01) inset;
+      backdrop-filter:blur(18px);
+    }
+
+    .card::before{
+      content:"";
+      position:absolute;
+      left:0;right:0;top:0;height:1px;
+      background:linear-gradient(90deg,transparent,rgba(129,140,248,.65),transparent);
+    }
+
+    .top{
+      padding:24px 26px 20px;
+      border-bottom:1px solid var(--border);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:18px;
+    }
+
+    .eyebrow{
+      color:var(--muted);
+      font-size:11px;
+      font-weight:700;
+      letter-spacing:.13em;
+      text-transform:uppercase;
+      margin-bottom:7px;
+    }
+
+    .title{
+      margin:0;
+      font-size:21px;
+      line-height:1.2;
+      letter-spacing:-.02em;
+      font-weight:760;
+    }
+
+    .status{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      border:1px solid rgba(52,211,153,.17);
+      background:rgba(52,211,153,.07);
+      color:#7eeac1;
+      border-radius:999px;
+      padding:7px 10px;
+      font-size:11px;
+      font-weight:700;
+      white-space:nowrap;
+    }
+
+    .status-dot{
+      width:6px;height:6px;border-radius:50%;
+      background:var(--success);
+      box-shadow:0 0 12px rgba(52,211,153,.55);
+    }
+
+    .hero{
+      display:grid;
+      grid-template-columns:270px 1fr;
+      gap:28px;
+      padding:30px 26px 26px;
+    }
+
+    .image-box{
+      min-height:245px;
+      border:1px solid var(--border);
+      border-radius:18px;
+      background:
+        radial-gradient(circle at 50% 45%,rgba(99,102,241,.11),transparent 46%),
+        linear-gradient(180deg,rgba(255,255,255,.015),rgba(255,255,255,.008));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+      position:relative;
+    }
+
+    .image-box::after{
+      content:"";
+      position:absolute;
+      inset:auto 15% 12px;
+      height:20px;
+      border-radius:50%;
+      background:rgba(0,0,0,.45);
+      filter:blur(14px);
+    }
+
+    #itemImage{
+      width:92%;
+      height:92%;
+      object-fit:contain;
+      position:relative;
+      z-index:1;
+      filter:drop-shadow(0 22px 26px rgba(0,0,0,.42));
+    }
+
+    .image-placeholder{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:8px;
+      text-align:center;
+      color:var(--muted-2);
+      padding:28px;
+      z-index:2;
+    }
+
+    .placeholder-icon{
+      width:42px;height:42px;border-radius:14px;
+      display:grid;place-items:center;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.02);
+      color:#7d8aa0;
+      font-size:20px;
+    }
+
+    .details{min-width:0}
+
+    .item-name{
+      font-size:27px;
+      line-height:1.08;
+      letter-spacing:-.035em;
+      margin:2px 0 7px;
+      font-weight:790;
+    }
+
+    .item-sub{
+      color:var(--muted);
+      font-size:13px;
+      margin-bottom:20px;
+      min-height:18px;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:9px;
+    }
+
+    .stat{
+      min-width:0;
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:12px 13px;
+      background:rgba(255,255,255,.018);
+    }
+
+    .label{
+      color:var(--muted-2);
+      font-size:10px;
+      font-weight:700;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      margin-bottom:5px;
+    }
+
+    .value{
+      color:#e7ecf4;
+      font-size:13px;
+      font-weight:650;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .value.mono{
+      font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+      font-size:12px;
+    }
+
+    .divider{height:1px;background:var(--border);margin:0 26px}
+
+    .inspect-section{padding:22px 26px 25px}
+
+    .section-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:15px;
+      margin-bottom:13px;
+    }
+
+    .section-title{
+      font-size:12px;
+      font-weight:760;
+      letter-spacing:.09em;
+      text-transform:uppercase;
+      color:#b6c0d0;
+    }
+
+    .protocol{
+      color:#707c90;
+      font-size:10px;
+      font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    }
+
+    .inspect-box{
+      width:100%;
+      border:1px solid var(--border);
+      border-radius:14px;
+      background:#080c14;
+      color:#7f8ca1;
+      padding:13px 14px;
+      font:11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
+      overflow-wrap:anywhere;
+      max-height:75px;
+      overflow:auto;
+    }
+
+    .actions{
+      display:flex;
+      gap:10px;
+      margin-top:14px;
+    }
+
+    button,.link-button{
+      appearance:none;
+      border:0;
+      cursor:pointer;
+      font:inherit;
+      text-decoration:none;
+    }
+
+    .primary{
+      flex:1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:9px;
+      padding:12px 15px;
+      border-radius:13px;
+      background:linear-gradient(180deg,#7477f5,#5d60e9);
+      color:#fff;
+      font-size:13px;
+      font-weight:760;
+      box-shadow:0 10px 24px rgba(99,102,241,.21);
+      transition:transform .16s ease,filter .16s ease,box-shadow .16s ease;
+    }
+
+    .primary:hover{transform:translateY(-1px);filter:brightness(1.05);box-shadow:0 14px 30px rgba(99,102,241,.28)}
+    .primary:active{transform:translateY(0)}
+
+    .secondary{
+      padding:12px 15px;
+      border-radius:13px;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.025);
+      color:#aab4c4;
+      font-size:13px;
+      font-weight:700;
+    }
+
+    .secondary:hover{background:rgba(255,255,255,.045);color:#e1e7ef}
+
+    .footer{
+      padding:0 26px 22px;
+      color:#566276;
+      font-size:10px;
+      text-align:center;
+    }
+
+    .error{
+      display:none;
+      margin-top:12px;
+      padding:11px 12px;
+      border-radius:12px;
+      border:1px solid rgba(251,113,133,.16);
+      background:rgba(251,113,133,.055);
+      color:#f6a0af;
+      font-size:11px;
+      line-height:1.45;
+    }
+
+    @media(max-width:700px){
+      .shell{padding:24px 12px}
+      .hero{grid-template-columns:1fr;gap:18px}
+      .image-box{min-height:220px}
+      .top{padding:20px}
+      .hero,.inspect-section{padding-left:20px;padding-right:20px}
+      .divider{margin:0 20px}
+      .footer{padding:0 20px 18px}
+      .status{display:none}
+    }
+
+    @media(max-width:430px){
+      .actions{flex-direction:column}
+      .secondary{width:100%}
+      .grid{grid-template-columns:1fr}
+      .title{font-size:18px}
+      .item-name{font-size:24px}
+    }
+  </style>
 </head>
 <body>
-    <p>Opening Steam...</p>
+  <main class="shell">
+    <div class="wrap">
+      <div class="brand">
+        <span class="brand-dot"></span>
+        CSFloat Inspector
+      </div>
 
-    <script>
-        const params = new URLSearchParams(window.location.search);
-        const link = params.get("link");
+      <section class="card">
+        <header class="top">
+          <div>
+            <div class="eyebrow">Item inspection</div>
+            <h1 class="title">Steam inspect request</h1>
+          </div>
+          <div class="status"><span class="status-dot"></span><span id="statusText">Ready</span></div>
+        </header>
 
-        if (link) {
-            window.location.href = link;
-        } else {
-            document.body.innerHTML = "<p>No inspect link provided.</p>";
+        <div class="hero">
+          <div class="image-box">
+            <img id="itemImage" alt="CS2 item" hidden />
+            <div id="imagePlaceholder" class="image-placeholder">
+              <div class="placeholder-icon">◈</div>
+              <strong>Item preview</strong>
+              <span>Loading inspection data…</span>
+            </div>
+          </div>
+
+          <div class="details">
+            <div class="item-name" id="itemName">Loading inspection…</div>
+            <div class="item-sub" id="itemSub">Reading the Steam inspect link</div>
+
+            <div class="grid">
+              <div class="stat">
+                <div class="label">Float</div>
+                <div class="value" id="floatValue">—</div>
+              </div>
+              <div class="stat">
+                <div class="label">Paint seed</div>
+                <div class="value" id="paintSeed">—</div>
+              </div>
+              <div class="stat">
+                <div class="label">Paint index</div>
+                <div class="value" id="paintIndex">—</div>
+              </div>
+              <div class="stat">
+                <div class="label">Definition index</div>
+                <div class="value" id="defIndex">—</div>
+              </div>
+              <div class="stat">
+                <div class="label">Owner</div>
+                <div class="value mono" id="ownerId">—</div>
+              </div>
+              <div class="stat">
+                <div class="label">Asset</div>
+                <div class="value mono" id="assetId">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <section class="inspect-section">
+          <div class="section-row">
+            <div class="section-title">Inspect URI</div>
+            <div class="protocol">steam://rungame/730/</div>
+          </div>
+
+          <div class="inspect-box" id="inspectUri">Loading…</div>
+
+          <div class="actions">
+            <button class="primary" id="launchButton">Open in Steam <span>↗</span></button>
+            <button class="secondary" id="copyButton">Copy link</button>
+          </div>
+
+          <div class="error" id="errorBox"></div>
+        </section>
+
+        <div class="footer">
+          CSFloat Inspector · Midnight
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script type="module">
+    const $ = (id) => document.getElementById(id);
+
+    const setText = (id, value) => {
+      $(id).textContent = value ?? "—";
+    };
+
+    const escapeText = (value) => String(value ?? "");
+
+    function showError(message) {
+      const box = $("errorBox");
+      box.textContent = message;
+      box.style.display = "block";
+      $("statusText").textContent = "Needs attention";
+    }
+
+    function normalizeInspectLink(raw) {
+      if (!raw) return "";
+      return raw.trim();
+    }
+
+    function parseLegacy(link) {
+      const decoded = decodeURIComponent(link);
+      const match = decoded.match(
+        /[+/]csgo_econ_action_preview(?:%20|\\s|\s)(?:S(\\d+)A(\\d+)D(\\d+)|M(\\d+)A(\\d+)D(\\d+))/i
+      );
+      if (!match) return null;
+
+      const ownerId = match[1] || null;
+      const marketId = match[4] || null;
+      const assetId = match[2] || match[5] || null;
+      const classId = match[3] || match[6] || null;
+
+      return {
+        owner_id: ownerId,
+        market_id: marketId,
+        asset_id: assetId,
+        class_id: classId
+      };
+    }
+
+    function wearName(float) {
+      if (float == null || Number.isNaN(Number(float))) return "";
+      const f = Number(float);
+      if (f < 0.07) return "Factory New";
+      if (f < 0.15) return "Minimal Wear";
+      if (f < 0.38) return "Field-Tested";
+      if (f < 0.45) return "Well-Worn";
+      return "Battle-Scarred";
+    }
+
+    async function loadSkinCatalog() {
+      const response = await fetch(
+        "https://raw.githubusercontent.com/ByMykel/CSGO-API/main/public/api/en/skins.json",
+        { cache: "force-cache" }
+      );
+      if (!response.ok) throw new Error("Skin catalog could not be loaded.");
+      return response.json();
+    }
+
+    async function findSkin(defindex, paintindex) {
+      if (defindex == null || paintindex == null) return null;
+      const catalog = await loadSkinCatalog();
+      const found = catalog.find((entry) => {
+        const weaponId = entry?.weapon?.weapon_id;
+        const paintId = entry?.paint_index;
+        return Number(weaponId) === Number(defindex) &&
+               Number(paintId) === Number(paintindex);
+      });
+
+      if (!found) return null;
+
+      return {
+        name: found.name || null,
+        image: found.image || null,
+        min_float: found.min_float ?? null,
+        max_float: found.max_float ?? null
+      };
+    }
+
+    async function decodeInspect(link) {
+      // Modern CS2 inspect links self-encode the item properties.
+      // CSFloat publishes the serializer/decoder used for this format.
+      try {
+        const mod = await import("https://esm.sh/@csfloat/cs2-inspect-serializer@1.1.6");
+        if (typeof mod.decodeLink === "function") {
+          const data = await mod.decodeLink(link);
+          if (data && typeof data === "object") {
+            return data;
+          }
         }
-    </script>
+      } catch (e) {
+        console.debug("Modern inspect decoder unavailable:", e);
+      }
+
+      return parseLegacy(link) || {};
+    }
+
+    async function init() {
+      const params = new URLSearchParams(window.location.search);
+      const encoded = params.get("link");
+
+      if (!encoded) {
+        setText("itemName", "No inspect link");
+        setText("itemSub", "This page was opened without a Steam inspection URI.");
+        $("inspectUri").textContent = "No ?link= parameter was provided.";
+        $("statusText").textContent = "No link";
+        $("launchButton").disabled = true;
+        return;
+      }
+
+      const inspectLink = normalizeInspectLink(encoded);
+      $("inspectUri").textContent = inspectLink;
+
+      try {
+        const data = await decodeInspect(inspectLink);
+
+        const defindex = data.defindex ?? data.def_index ?? null;
+        const paintindex = data.paintindex ?? data.paint_index ?? null;
+        const paintseed = data.paintseed ?? data.paint_seed ?? null;
+        const floatvalue = data.floatvalue ?? data.float_value ?? data.paintwear ?? data.paint_wear ?? null;
+        const ownerId = data.owner_id ?? data.ownerId ?? null;
+        const assetId = data.asset_id ?? data.assetId ?? data.itemid ?? data.item_id ?? null;
+
+        let skin = null;
+        try {
+          skin = await findSkin(defindex, paintindex);
+        } catch (e) {
+          console.debug("Catalog lookup failed:", e);
+        }
+
+        const displayName =
+          data.full_item_name ||
+          data.market_hash_name ||
+          data.item_name_string ||
+          skin?.name ||
+          "CS2 item";
+
+        const wear =
+          data.wear_name ||
+          wearName(floatvalue);
+
+        setText("itemName", displayName);
+        setText(
+          "itemSub",
+          [
+            data.rarity_name || null,
+            data.quality_name || null,
+            wear || null
+          ].filter(Boolean).join(" · ") || "Steam inspection target"
+        );
+
+        setText("floatValue", floatvalue != null ? Number(floatvalue).toFixed(6) : "—");
+        setText("paintSeed", paintseed != null ? paintseed : "—");
+        setText("paintIndex", paintindex != null ? paintindex : "—");
+        setText("defIndex", defindex != null ? defindex : "—");
+        setText("ownerId", ownerId || "—");
+        setText("assetId", assetId || "—");
+
+        if (skin?.image) {
+          $("itemImage").src = skin.image;
+          $("itemImage").hidden = false;
+          $("imagePlaceholder").hidden = true;
+        } else {
+          $("imagePlaceholder").querySelector("strong").textContent =
+            defindex != null ? "Item preview unavailable" : "Legacy inspect link";
+          $("imagePlaceholder").querySelector("span").textContent =
+            defindex != null
+              ? "No matching catalog artwork was found."
+              : "This S/A/D link does not contain skin appearance data.";
+        }
+
+        $("statusText").textContent = "Ready";
+      } catch (e) {
+        console.error(e);
+        setText("itemName", "Steam inspect link");
+        setText("itemSub", "The item could not be decoded in the browser.");
+        showError("The inspection link is valid enough to pass through to Steam, but its item details could not be decoded here.");
+      }
+
+      $("launchButton").addEventListener("click", () => {
+        try {
+          window.location.href = inspectLink;
+        } catch (e) {
+          showError("Steam could not be opened from this browser.");
+        }
+      });
+
+      $("copyButton").addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(inspectLink);
+          $("copyButton").textContent = "Copied";
+          setTimeout(() => $("copyButton").textContent = "Copy link", 1200);
+        } catch {
+          showError("Clipboard access was blocked. Select and copy the URI manually.");
+        }
+      });
+
+      // Preserve the original redirect behavior, while giving the user
+      // a short-lived fallback page if the browser blocks steam://.
+      setTimeout(() => {
+        try {
+          window.location.href = inspectLink;
+        } catch (e) {
+          console.debug("Automatic Steam launch blocked:", e);
+        }
+      }, 650);
+    }
+
+    init();
+  </script>
 </body>
 </html>
