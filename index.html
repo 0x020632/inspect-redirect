@@ -4,1142 +4,654 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#080b12" />
+
   <title>CSFloat Inspector</title>
+
   <style>
-    :root{
-      --bg:#070a10;
-      --bg-2:#0b0f17;
-      --panel:rgba(15,20,31,.88);
-      --panel-2:rgba(18,24,37,.82);
-      --border:rgba(148,163,184,.14);
-      --border-strong:rgba(129,140,248,.28);
-      --text:#f4f7fb;
-      --muted:#8995a8;
-      --muted-2:#626e82;
-      --accent:#6366f1;
-      --accent-2:#818cf8;
-      --accent-glow:rgba(99,102,241,.20);
-      --success:#34d399;
-      --danger:#fb7185;
-      --shadow:0 30px 90px rgba(0,0,0,.46);
+    :root {
+      --bg: #070a10;
+      --card: #0d131e;
+      --border: rgba(148, 163, 184, 0.14);
+      --accent: #818cf8;
+      --text: #eef2f7;
+      --muted: #707c90;
     }
 
-    *{box-sizing:border-box}
-    html,body{min-height:100%;margin:0}
-    body{
-      font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-      color:var(--text);
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+    }
+
+    body {
+      font-family:
+        Inter,
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
+      color: var(--text);
+
       background:
-        radial-gradient(circle at 50% 15%, rgba(99,102,241,.10), transparent 32%),
-        radial-gradient(circle at 12% 80%, rgba(59,130,246,.05), transparent 28%),
-        linear-gradient(180deg,var(--bg-2),var(--bg));
-      overflow-x:hidden;
+        radial-gradient(
+          circle at 50% 15%,
+          rgba(99, 102, 241, 0.10),
+          transparent 35%
+        ),
+        linear-gradient(
+          180deg,
+          #0b0f17 0%,
+          #070a10 100%
+        );
+
+      overflow: hidden;
     }
 
-    body::before{
-      content:"";
-      position:fixed;
-      inset:0;
-      pointer-events:none;
-      opacity:.24;
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+
+      opacity: 0.18;
+
       background-image:
-        linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),
-        linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);
-      background-size:32px 32px;
-      mask-image:linear-gradient(to bottom,black,transparent 75%);
+        linear-gradient(
+          rgba(255,255,255,.018) 1px,
+          transparent 1px
+        ),
+        linear-gradient(
+          90deg,
+          rgba(255,255,255,.018) 1px,
+          transparent 1px
+        );
+
+      background-size: 32px 32px;
+
+      mask-image:
+        linear-gradient(
+          to bottom,
+          black,
+          transparent 85%
+        );
     }
 
-    .shell{
-      min-height:100vh;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:48px 18px;
+    .page {
+      min-height: 100vh;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      padding: 24px;
     }
 
-    .wrap{width:min(720px,100%)}
+    .card {
+      position: relative;
 
-    .brand{
-      display:flex;
-      align-items:center;
-      gap:12px;
-      margin:0 0 18px 6px;
-      color:#aeb8c9;
-      font-size:12px;
-      font-weight:700;
-      letter-spacing:.14em;
-      text-transform:uppercase;
-    }
+      width: min(760px, 100%);
+      height: min(560px, 85vh);
 
-    .brand-dot{
-      width:9px;height:9px;border-radius:50%;
-      background:var(--accent-2);
-      box-shadow:0 0 20px var(--accent-glow);
-    }
+      border-radius: 24px;
 
-    .card{
-      position:relative;
-      overflow:hidden;
-      border:1px solid var(--border);
-      border-radius:24px;
-      background:linear-gradient(180deg,rgba(18,24,37,.93),rgba(10,14,22,.96));
-      box-shadow:var(--shadow),0 0 0 1px rgba(255,255,255,.01) inset;
-      backdrop-filter:blur(18px);
-    }
-
-    .card::before{
-      content:"";
-      position:absolute;
-      left:0;right:0;top:0;height:1px;
-      background:linear-gradient(90deg,transparent,rgba(129,140,248,.65),transparent);
-    }
-
-    .top{
-      padding:24px 26px 20px;
-      border-bottom:1px solid var(--border);
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:18px;
-    }
-
-    .eyebrow{
-      color:var(--muted);
-      font-size:11px;
-      font-weight:700;
-      letter-spacing:.13em;
-      text-transform:uppercase;
-      margin-bottom:7px;
-    }
-
-    .title{
-      margin:0;
-      font-size:21px;
-      line-height:1.2;
-      letter-spacing:-.02em;
-      font-weight:760;
-    }
-
-    .status{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      border:1px solid rgba(52,211,153,.17);
-      background:rgba(52,211,153,.07);
-      color:#7eeac1;
-      border-radius:999px;
-      padding:7px 10px;
-      font-size:11px;
-      font-weight:700;
-      white-space:nowrap;
-      transition:all .3s ease;
-    }
-
-    .status.loading{
-      border-color:rgba(129,140,248,.25);
-      background:rgba(99,102,241,.07);
-      color:var(--accent-2);
-    }
-
-    .status.error{
-      border-color:rgba(251,113,133,.2);
-      background:rgba(251,113,133,.06);
-      color:#f6a0af;
-    }
-
-    .status-dot{
-      width:6px;height:6px;border-radius:50%;
-      background:var(--success);
-      box-shadow:0 0 12px rgba(52,211,153,.55);
-      transition:background .3s,box-shadow .3s;
-    }
-
-    .status.loading .status-dot{
-      background:var(--accent-2);
-      box-shadow:0 0 12px rgba(129,140,248,.5);
-      animation:pulse 1.2s ease-in-out infinite;
-    }
-
-    .status.error .status-dot{
-      background:var(--danger);
-      box-shadow:0 0 12px rgba(251,113,133,.45);
-    }
-
-    @keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
-
-    .hero{
-      display:grid;
-      grid-template-columns:270px 1fr;
-      gap:28px;
-      padding:30px 26px 26px;
-    }
-
-    .image-box{
-      min-height:245px;
-      border:1px solid var(--border);
-      border-radius:18px;
       background:
-        radial-gradient(circle at 50% 45%,rgba(99,102,241,.13),transparent 50%),
-        linear-gradient(180deg,rgba(255,255,255,.015),rgba(255,255,255,.008));
-      overflow:hidden;
-      position:relative;
+        linear-gradient(
+          180deg,
+          rgba(18, 24, 37, 0.96),
+          rgba(9, 13, 21, 0.98)
+        );
+
+      border: 1px solid var(--border);
+
+      box-shadow:
+        0 40px 100px rgba(0, 0, 0, 0.55),
+        inset 0 0 0 1px rgba(255,255,255,.015);
+
+      overflow: hidden;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    /* subtle ground shadow under the weapon */
-    .image-box::after{
-      content:"";
-      position:absolute;
-      inset:auto 20% 10px;
-      height:18px;
-      border-radius:50%;
-      background:rgba(0,0,0,.55);
-      filter:blur(16px);
-      z-index:2;
-      pointer-events:none;
+    .card::before {
+      content: "";
+
+      position: absolute;
+
+      top: 0;
+      left: 10%;
+      right: 10%;
+
+      height: 1px;
+
+      background:
+        linear-gradient(
+          90deg,
+          transparent,
+          rgba(129,140,248,.65),
+          transparent
+        );
     }
 
-    #itemImage{
-      display:none;
-      position:absolute;
-      inset:0;
-      width:100%;
-      height:100%;
-      object-fit:contain;
-      padding:20px;
-      filter:drop-shadow(0 18px 28px rgba(0,0,0,.5));
+    /*
+      Large image area.
+      The weapon is centered and never cropped.
+    */
+    .image-area {
+      position: absolute;
+
+      inset: 0;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      padding: 40px;
     }
 
-    .image-placeholder{
-      position:absolute;
-      inset:0;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-      text-align:center;
-      color:var(--muted-2);
-      padding:28px;
+    #itemImage {
+      display: none;
+
+      width: 100%;
+      height: 100%;
+
+      /*
+        IMPORTANT:
+        contain = entire weapon remains visible
+        no cropping
+      */
+      object-fit: contain;
+
+      object-position: center center;
+
+      padding: 20px;
+
+      filter:
+        drop-shadow(0 24px 35px rgba(0,0,0,.60))
+        drop-shadow(0 0 25px rgba(99,102,241,.08));
+
+      user-select: none;
+      -webkit-user-drag: none;
+
+      animation: itemIn .45s ease forwards;
     }
 
-    .placeholder-icon{
-      width:42px;height:42px;border-radius:14px;
-      display:grid;place-items:center;
-      border:1px solid var(--border);
-      background:rgba(255,255,255,.02);
-      color:#7d8aa0;
-      font-size:20px;
+    @keyframes itemIn {
+      from {
+        opacity: 0;
+        transform: scale(.94);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
     }
 
-    .details{min-width:0}
+    /*
+      Very subtle glow behind the weapon.
+    */
+    .image-glow {
+      position: absolute;
 
-    .item-name{
-      font-size:27px;
-      line-height:1.08;
-      letter-spacing:-.035em;
-      margin:2px 0 4px;
-      font-weight:790;
+      width: 60%;
+      height: 45%;
+
+      border-radius: 50%;
+
+      background:
+        radial-gradient(
+          circle,
+          rgba(99,102,241,.10),
+          transparent 70%
+        );
+
+      filter: blur(25px);
+
+      pointer-events: none;
     }
 
-    .wear-badge{
-      display:inline-block;
-      padding:3px 9px;
-      border-radius:6px;
-      font-size:10px;
-      font-weight:700;
-      letter-spacing:.08em;
-      text-transform:uppercase;
-      margin-bottom:14px;
-      background:rgba(255,255,255,.06);
-      border:1px solid rgba(255,255,255,.09);
-      color:var(--muted);
+    .placeholder {
+      position: absolute;
+
+      inset: 0;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      flex-direction: column;
+
+      gap: 9px;
+
+      color: var(--muted);
+
+      text-align: center;
+
+      font-size: 12px;
     }
 
-    .wear-badge.fn{ background:rgba(52,211,153,.10); border-color:rgba(52,211,153,.2); color:#7eeac1; }
-    .wear-badge.mw{ background:rgba(99,102,241,.10); border-color:rgba(99,102,241,.2); color:var(--accent-2); }
-    .wear-badge.ft{ background:rgba(234,179,8,.09); border-color:rgba(234,179,8,.18); color:#fde047; }
-    .wear-badge.ww{ background:rgba(251,146,60,.09); border-color:rgba(251,146,60,.18); color:#fdba74; }
-    .wear-badge.bs{ background:rgba(251,113,133,.09); border-color:rgba(251,113,133,.18); color:#fca5a5; }
+    .placeholder-icon {
+      width: 44px;
+      height: 44px;
 
-    .item-sub{
-      color:var(--muted);
-      font-size:12px;
-      margin-bottom:18px;
-      min-height:16px;
+      border-radius: 14px;
+
+      display: grid;
+      place-items: center;
+
+      border: 1px solid var(--border);
+
+      background: rgba(255,255,255,.02);
+
+      color: #8995a8;
+
+      font-size: 20px;
     }
 
-    .grid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:9px;
+    .placeholder strong {
+      color: #aeb7c7;
+      font-size: 13px;
     }
 
-    .stat{
-      min-width:0;
-      border:1px solid var(--border);
-      border-radius:14px;
-      padding:12px 13px;
-      background:rgba(255,255,255,.018);
+    /*
+      Small loading indicator.
+    */
+    .loading-dot {
+      width: 6px;
+      height: 6px;
+
+      border-radius: 50%;
+
+      background: var(--accent);
+
+      box-shadow:
+        0 0 14px rgba(129,140,248,.7);
+
+      animation: pulse 1.2s infinite;
     }
 
-    .label{
-      color:var(--muted-2);
-      font-size:10px;
-      font-weight:700;
-      letter-spacing:.08em;
-      text-transform:uppercase;
-      margin-bottom:5px;
+    @keyframes pulse {
+      0%,
+      100% {
+        opacity: .35;
+        transform: scale(.8);
+      }
+
+      50% {
+        opacity: 1;
+        transform: scale(1);
+      }
     }
 
-    .value{
-      color:#e7ecf4;
-      font-size:13px;
-      font-weight:650;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
+    /*
+      Mobile
+    */
+    @media (max-width: 600px) {
+      .page {
+        padding: 12px;
+      }
 
-    .value.mono{
-      font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-      font-size:12px;
-    }
+      .card {
+        width: 100%;
+        height: 70vh;
 
-    /* Float bar */
-    .float-bar-wrap{
-      margin-top:4px;
-    }
+        min-height: 360px;
 
-    .float-bar-track{
-      height:4px;
-      border-radius:999px;
-      background:linear-gradient(90deg,
-        #34d399 0%,
-        #818cf8 15%,
-        #fde047 38%,
-        #fdba74 45%,
-        #fca5a5 100%
-      );
-      position:relative;
-    }
+        border-radius: 20px;
+      }
 
-    .float-bar-cursor{
-      position:absolute;
-      top:50%;
-      transform:translate(-50%,-50%);
-      width:10px;height:10px;
-      border-radius:50%;
-      background:#fff;
-      box-shadow:0 0 0 2px rgba(0,0,0,.6);
-      transition:left .4s cubic-bezier(.34,1.56,.64,1);
-    }
+      .image-area {
+        padding: 20px;
+      }
 
-    .divider{height:1px;background:var(--border);margin:0 26px}
-
-    /* Stickers section */
-    .stickers-section{
-      padding:20px 26px;
-      border-bottom:1px solid var(--border);
-      display:none;
-    }
-
-    .stickers-section.has-stickers{
-      display:block;
-    }
-
-    .stickers-header{
-      font-size:11px;
-      font-weight:760;
-      letter-spacing:.09em;
-      text-transform:uppercase;
-      color:#b6c0d0;
-      margin-bottom:12px;
-    }
-
-    .stickers-row{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-
-    .sticker-chip{
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap:6px;
-      padding:10px 12px;
-      border:1px solid var(--border);
-      border-radius:14px;
-      background:rgba(255,255,255,.018);
-      min-width:72px;
-      max-width:100px;
-    }
-
-    .sticker-chip img{
-      width:52px;height:52px;
-      object-fit:contain;
-      filter:drop-shadow(0 4px 8px rgba(0,0,0,.4));
-    }
-
-    .sticker-chip-name{
-      font-size:9px;
-      font-weight:700;
-      color:var(--muted);
-      text-align:center;
-      line-height:1.3;
-      max-width:80px;
-      overflow:hidden;
-      display:-webkit-box;
-      -webkit-line-clamp:2;
-      -webkit-box-orient:vertical;
-    }
-
-    .sticker-chip-wear{
-      font-size:9px;
-      color:var(--muted-2);
-      font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-    }
-
-    .sticker-slot{
-      position:absolute;
-      top:5px;right:5px;
-      width:16px;height:16px;
-      border-radius:50%;
-      background:rgba(0,0,0,.55);
-      font-size:8px;
-      font-weight:700;
-      color:var(--muted-2);
-      display:grid;place-items:center;
-    }
-
-    /* Launch section (replaces inspect section) */
-    .launch-section{
-      padding:22px 26px 25px;
-    }
-
-    .launch-inner{
-      display:flex;
-      gap:10px;
-    }
-
-    .error{
-      display:none;
-      margin-top:12px;
-      padding:11px 12px;
-      border-radius:12px;
-      border:1px solid rgba(251,113,133,.16);
-      background:rgba(251,113,133,.055);
-      color:#f6a0af;
-      font-size:11px;
-      line-height:1.45;
-    }
-
-    .footer{
-      padding:0 26px 22px;
-      color:#566276;
-      font-size:10px;
-      text-align:center;
-    }
-
-    /* Buttons */
-    button,.link-button{
-      appearance:none;
-      border:0;
-      cursor:pointer;
-      font:inherit;
-      text-decoration:none;
-    }
-
-    .primary{
-      flex:1;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:9px;
-      padding:12px 15px;
-      border-radius:13px;
-      background:linear-gradient(180deg,#7477f5,#5d60e9);
-      color:#fff;
-      font-size:13px;
-      font-weight:760;
-      box-shadow:0 10px 24px rgba(99,102,241,.21);
-      transition:transform .16s ease,filter .16s ease,box-shadow .16s ease;
-    }
-
-    .primary:hover{transform:translateY(-1px);filter:brightness(1.05);box-shadow:0 14px 30px rgba(99,102,241,.28)}
-    .primary:active{transform:translateY(0)}
-    .primary:disabled{opacity:.45;pointer-events:none}
-
-    .secondary{
-      padding:12px 15px;
-      border-radius:13px;
-      border:1px solid var(--border);
-      background:rgba(255,255,255,.025);
-      color:#aab4c4;
-      font-size:13px;
-      font-weight:700;
-      transition:background .15s,color .15s;
-    }
-
-    .secondary:hover{background:rgba(255,255,255,.045);color:#e1e7ef}
-
-    /* ============================================================
-       STEAM MODAL
-       ============================================================ */
-    .steam-overlay{
-      position:fixed;
-      inset:0;
-      background:rgba(4,6,11,.72);
-      backdrop-filter:blur(12px) saturate(.7);
-      z-index:100;
-      display:grid;
-      place-items:center;
-      padding:24px;
-      opacity:0;
-      transition:opacity .25s ease;
-      pointer-events:none;
-    }
-
-    .steam-overlay.visible{
-      opacity:1;
-      pointer-events:all;
-    }
-
-    .steam-dialog{
-      width:min(440px,100%);
-      border:1px solid var(--border);
-      border-radius:22px;
-      background:linear-gradient(180deg,rgba(20,26,40,.98),rgba(12,16,26,.99));
-      box-shadow:0 40px 100px rgba(0,0,0,.65),0 0 0 1px rgba(255,255,255,.015) inset;
-      overflow:hidden;
-      transform:translateY(14px) scale(.97);
-      transition:transform .28s cubic-bezier(.34,1.4,.64,1),opacity .25s ease;
-      opacity:0;
-    }
-
-    .steam-overlay.visible .steam-dialog{
-      transform:translateY(0) scale(1);
-      opacity:1;
-    }
-
-    .steam-dialog-top{
-      position:relative;
-      height:3px;
-      background:linear-gradient(90deg,transparent,var(--accent-2),transparent);
-    }
-
-    .steam-dialog-body{
-      padding:28px 28px 24px;
-    }
-
-    .steam-icon-row{
-      display:flex;
-      align-items:center;
-      gap:14px;
-      margin-bottom:18px;
-    }
-
-    .steam-icon-badge{
-      width:48px;height:48px;
-      border-radius:14px;
-      background:rgba(99,102,241,.12);
-      border:1px solid rgba(129,140,248,.2);
-      display:grid;place-items:center;
-      font-size:22px;
-      flex-shrink:0;
-    }
-
-    .steam-icon-text{
-      flex:1;min-width:0;
-    }
-
-    .steam-dialog-title{
-      font-size:18px;
-      font-weight:790;
-      letter-spacing:-.025em;
-      margin:0 0 3px;
-    }
-
-    .steam-dialog-sub{
-      font-size:12px;
-      color:var(--muted);
-      margin:0;
-    }
-
-    .steam-countdown{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      padding:12px 14px;
-      border-radius:12px;
-      border:1px solid var(--border);
-      background:rgba(255,255,255,.018);
-      margin-bottom:18px;
-    }
-
-    .steam-countdown-ring{
-      flex-shrink:0;
-      position:relative;
-      width:32px;height:32px;
-    }
-
-    .steam-countdown-ring svg{
-      position:absolute;inset:0;
-      transform:rotate(-90deg);
-    }
-
-    .steam-countdown-ring circle{
-      fill:none;
-      stroke:rgba(129,140,248,.15);
-      stroke-width:3;
-    }
-
-    .steam-countdown-ring circle.progress{
-      stroke:var(--accent-2);
-      stroke-linecap:round;
-      transition:stroke-dashoffset .9s linear;
-    }
-
-    .steam-countdown-num{
-      position:absolute;inset:0;
-      display:grid;place-items:center;
-      font-size:11px;
-      font-weight:760;
-      color:var(--accent-2);
-      font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-    }
-
-    .steam-countdown-msg{
-      font-size:12px;
-      color:var(--muted);
-      line-height:1.4;
-    }
-
-    .steam-countdown-msg strong{
-      color:var(--text);
-      font-weight:660;
-    }
-
-    .steam-dialog-actions{
-      display:flex;
-      gap:9px;
-    }
-
-    .steam-dialog-actions .primary{
-      font-size:13px;
-      padding:11px 14px;
-    }
-
-    .steam-dialog-actions .secondary{
-      padding:11px 14px;
-      font-size:13px;
-    }
-
-    /* Responsive */
-    @media(max-width:700px){
-      .shell{padding:24px 12px}
-      .hero{grid-template-columns:1fr;gap:18px}
-      .image-box{min-height:220px}
-      .top{padding:20px}
-      .hero,.launch-section,.stickers-section{padding-left:20px;padding-right:20px}
-      .divider{margin:0 20px}
-      .footer{padding:0 20px 18px}
-      .status{display:none}
-    }
-
-    @media(max-width:430px){
-      .launch-inner{flex-direction:column}
-      .secondary{width:100%}
-      .grid{grid-template-columns:1fr}
-      .title{font-size:18px}
-      .item-name{font-size:22px}
-      .steam-dialog-actions{flex-direction:column}
+      #itemImage {
+        padding: 8px;
+      }
     }
   </style>
 </head>
+
 <body>
 
-  <!-- Steam launch modal -->
-  <div class="steam-overlay" id="steamOverlay" role="dialog" aria-modal="true" aria-label="Steam is launching">
-    <div class="steam-dialog">
-      <div class="steam-dialog-top"></div>
-      <div class="steam-dialog-body">
-        <div class="steam-icon-row">
-          <div class="steam-icon-badge">⎋</div>
-          <div class="steam-icon-text">
-            <p class="steam-dialog-title">Opening Steam</p>
-            <p class="steam-dialog-sub" id="modalItemName">CS2 item inspect</p>
+  <main class="page">
+
+    <section class="card">
+
+      <div class="image-glow"></div>
+
+      <div class="image-area">
+
+        <img
+          id="itemImage"
+          alt="CS2 item"
+        />
+
+        <div
+          id="placeholder"
+          class="placeholder"
+        >
+          <div class="placeholder-icon">
+            ◈
           </div>
+
+          <strong>
+            Loading item
+          </strong>
+
+          <div class="loading-dot"></div>
         </div>
 
-        <div class="steam-countdown">
-          <div class="steam-countdown-ring">
-            <svg viewBox="0 0 32 32" width="32" height="32">
-              <circle cx="16" cy="16" r="13"/>
-              <circle cx="16" cy="16" r="13" class="progress" id="countdownCircle"
-                stroke-dasharray="81.68"
-                stroke-dashoffset="0"/>
-            </svg>
-            <div class="steam-countdown-num" id="countdownNum">3</div>
-          </div>
-          <div class="steam-countdown-msg">
-            <strong>Steam should open automatically.</strong><br>
-            If nothing happens, use the button below.
-          </div>
-        </div>
-
-        <div class="steam-dialog-actions">
-          <button class="primary" id="modalLaunchBtn">Open in Steam ↗</button>
-          <button class="secondary" id="modalDismissBtn">Dismiss</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <main class="shell">
-    <div class="wrap">
-      <div class="brand">
-        <span class="brand-dot"></span>
-        CSFloat Inspector
       </div>
 
-      <section class="card">
-        <header class="top">
-          <div>
-            <div class="eyebrow">Item inspection</div>
-            <h1 class="title">Steam inspect request</h1>
-          </div>
-          <div class="status loading" id="statusBadge">
-            <span class="status-dot"></span>
-            <span id="statusText">Loading</span>
-          </div>
-        </header>
+    </section>
 
-        <div class="hero">
-          <div class="image-box">
-            <img id="itemImage" alt="CS2 item" />
-            <div id="imagePlaceholder" class="image-placeholder">
-              <div class="placeholder-icon">◈</div>
-              <strong>Item preview</strong>
-              <span>Reading inspect link…</span>
-            </div>
-          </div>
-
-          <div class="details">
-            <div class="item-name" id="itemName">Loading…</div>
-            <div id="wearBadgeWrap"></div>
-            <div class="item-sub" id="itemSub">Reading the Steam inspect link</div>
-
-            <div class="grid">
-              <div class="stat">
-                <div class="label">Float value</div>
-                <div class="value" id="floatValue">—</div>
-                <div class="float-bar-wrap" id="floatBarWrap" hidden>
-                  <div class="float-bar-track">
-                    <div class="float-bar-cursor" id="floatCursor"></div>
-                  </div>
-                </div>
-              </div>
-              <div class="stat">
-                <div class="label">Paint seed</div>
-                <div class="value" id="paintSeed">—</div>
-              </div>
-              <div class="stat">
-                <div class="label">Paint index</div>
-                <div class="value" id="paintIndex">—</div>
-              </div>
-              <div class="stat">
-                <div class="label">Definition index</div>
-                <div class="value" id="defIndex">—</div>
-              </div>
-              <div class="stat">
-                <div class="label">Owner</div>
-                <div class="value mono" id="ownerId">—</div>
-              </div>
-              <div class="stat">
-                <div class="label">Asset</div>
-                <div class="value mono" id="assetId">—</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Stickers row (shown only when stickers exist) -->
-        <div class="stickers-section" id="stickersSection">
-          <div class="stickers-header">Applied stickers</div>
-          <div class="stickers-row" id="stickersRow"></div>
-        </div>
-
-        <div class="divider"></div>
-
-        <section class="launch-section">
-          <div class="launch-inner">
-            <button class="primary" id="launchButton" disabled>Open in Steam ↗</button>
-            <button class="secondary" id="copyButton">Copy link</button>
-          </div>
-          <div class="error" id="errorBox"></div>
-        </section>
-
-        <div class="footer">
-          CSFloat Inspector · Midnight
-        </div>
-      </section>
-    </div>
   </main>
 
+
   <script type="module">
-    /* ── helpers ─────────────────────────────────────────────── */
-    const $ = (id) => document.getElementById(id);
 
-    const setText = (id, value) => { $(id).textContent = value ?? "—"; };
+    const BASE =
+      "https://raw.githubusercontent.com/ByMykel/CSGO-API/main/public/api/en";
 
-    function setStatus(state, text) {
-      const badge = $("statusBadge");
-      badge.className = "status " + (state === "ready" ? "" : state);
-      $("statusText").textContent = text;
+    let skinCache = null;
+
+
+    async function getSkins() {
+
+      if (!skinCache) {
+
+        const response =
+          await fetch(
+            `${BASE}/skins.json`,
+            {
+              cache: "force-cache"
+            }
+          );
+
+        if (!response.ok) {
+          throw new Error(
+            `Failed to load skins`
+          );
+        }
+
+        skinCache =
+          await response.json();
+      }
+
+      return skinCache;
     }
 
-    function showError(msg) {
-      const box = $("errorBox");
-      box.textContent = msg;
-      box.style.display = "block";
-      setStatus("error", "Error");
-    }
 
-    /* ── wear helpers ────────────────────────────────────────── */
-    const WEAR_TIERS = [
-      { max: 0.07, label: "Factory New",  cls: "fn"  },
-      { max: 0.15, label: "Minimal Wear", cls: "mw"  },
-      { max: 0.38, label: "Field-Tested", cls: "ft"  },
-      { max: 0.45, label: "Well-Worn",    cls: "ww"  },
-      { max: 1.00, label: "Battle-Scarred", cls: "bs" },
-    ];
+    async function findSkin(
+      defindex,
+      paintindex
+    ) {
 
-    function wearTier(f) {
-      const n = Number(f);
-      if (Number.isNaN(n)) return null;
-      return WEAR_TIERS.find(t => n <= t.max) || WEAR_TIERS[WEAR_TIERS.length - 1];
-    }
+      if (
+        defindex == null ||
+        paintindex == null
+      ) {
+        return null;
+      }
 
-    function renderWearBadge(f) {
-      const tier = wearTier(f);
-      if (!tier) return;
-      const wrap = $("wearBadgeWrap");
-      const span = document.createElement("span");
-      span.className = "wear-badge " + tier.cls;
-      span.textContent = tier.label;
-      wrap.appendChild(span);
-    }
+      const skins =
+        await getSkins();
 
-    function renderFloatBar(f, minF, maxF) {
-      const n = Number(f);
-      if (Number.isNaN(n)) return;
-      const lo = Number(minF ?? 0);
-      const hi = Number(maxF ?? 1);
-      const pct = ((n - lo) / (hi - lo)) * 100;
-      $("floatCursor").style.left = Math.max(0, Math.min(100, pct)) + "%";
-      $("floatBarWrap").hidden = false;
-    }
+      return (
+        skins.find(
+          skin =>
+            Number(
+              skin?.weapon?.weapon_id
+            ) === Number(defindex) &&
 
-    /* ── ByMykel catalog loaders ─────────────────────────────── */
-    const BASE = "https://raw.githubusercontent.com/ByMykel/CSGO-API/main/public/api/en";
-
-    let _skinCache = null;
-    let _stickerCache = null;
-    let _weaponCache = null;
-
-    async function loadJSON(path) {
-      const r = await fetch(`${BASE}/${path}`, { cache: "force-cache" });
-      if (!r.ok) throw new Error(`Failed to fetch ${path} (${r.status})`);
-      return r.json();
-    }
-
-    async function getSkins()    { return _skinCache    ??= loadJSON("skins.json"); }
-    async function getStickers() { return _stickerCache ??= loadJSON("stickers.json"); }
-    async function getWeapons()  { return _weaponCache  ??= loadJSON("weapons.json"); }
-
-    async function findSkin(defindex, paintindex) {
-      if (defindex == null || paintindex == null) return null;
-      const catalog = await getSkins();
-      const entry = catalog.find(e =>
-        Number(e?.weapon?.weapon_id) === Number(defindex) &&
-        Number(e?.paint_index)       === Number(paintindex)
+            Number(
+              skin?.paint_index
+            ) === Number(paintindex)
+        ) || null
       );
-      if (!entry) return null;
-      return {
-        name:      entry.name      || null,
-        image:     entry.image     || null,
-        min_float: entry.min_float ?? null,
-        max_float: entry.max_float ?? null,
-        rarity:    entry.rarity    || null,
-        category:  entry.category  || null,
-        weapon:    entry.weapon    || null,
-        collections: entry.collections || [],
-      };
     }
 
-    async function findSticker(sticker_id) {
-      if (sticker_id == null) return null;
-      const catalog = await getStickers();
-      return catalog.find(s => Number(s?.sticker_id ?? s?.id?.replace?.("sticker-","")) === Number(sticker_id)) || null;
-    }
 
-    /* ── Inspect decoder ─────────────────────────────────────── */
-    function parseLegacy(link) {
-      const decoded = decodeURIComponent(link);
-      const match = decoded.match(
-        /[+/]csgo_econ_action_preview(?:%20|\s)\s*(?:S(\d+)A(\d+)D(\d+)|M(\d+)A(\d+)D(\d+))/i
-      );
-      if (!match) return null;
-      return {
-        owner_id: match[1] || null,
-        market_id: match[4] || null,
-        asset_id: match[2] || match[5] || null,
-        class_id: match[3] || match[6] || null,
-      };
-    }
-
+    /*
+      Modern CS2 inspect decoder
+    */
     async function decodeInspect(link) {
+
       try {
-        const mod = await import("https://esm.sh/@csfloat/cs2-inspect-serializer@1.1.6");
-        if (typeof mod.decodeLink === "function") {
-          const data = await mod.decodeLink(link);
-          if (data && typeof data === "object") return data;
-        }
-      } catch (e) {
-        console.debug("Modern inspect decoder unavailable:", e);
-      }
-      return parseLegacy(link) || {};
-    }
 
-    /* ── Steam modal ─────────────────────────────────────────── */
-    const CIRCUMFERENCE = 81.68; // 2 * pi * 13
-    let countdownTimer = null;
+        const module =
+          await import(
+            "https://esm.sh/@csfloat/cs2-inspect-serializer@1.1.6"
+          );
 
-    function openSteamModal(inspectLink, itemLabel) {
-      $("modalItemName").textContent = itemLabel || "CS2 item inspect";
-      const overlay = $("steamOverlay");
-      overlay.classList.add("visible");
+        if (
+          typeof module.decodeLink ===
+          "function"
+        ) {
 
-      // reset countdown
-      let remaining = 3;
-      $("countdownNum").textContent = remaining;
-      $("countdownCircle").style.strokeDashoffset = "0";
+          const data =
+            await module.decodeLink(link);
 
-      clearInterval(countdownTimer);
-      countdownTimer = setInterval(() => {
-        remaining -= 1;
-        $("countdownNum").textContent = Math.max(0, remaining);
-        const progress = ((3 - remaining) / 3) * CIRCUMFERENCE;
-        $("countdownCircle").style.strokeDashoffset = progress;
-        if (remaining <= 0) {
-          clearInterval(countdownTimer);
-        }
-      }, 1000);
-
-      $("modalLaunchBtn").onclick = () => { window.location.href = inspectLink; };
-      $("modalDismissBtn").onclick = closeSteamModal;
-      overlay.addEventListener("click", e => { if (e.target === overlay) closeSteamModal(); });
-    }
-
-    function closeSteamModal() {
-      $("steamOverlay").classList.remove("visible");
-      clearInterval(countdownTimer);
-    }
-
-    /* ── Sticker renderer ────────────────────────────────────── */
-    async function renderStickers(stickers) {
-      if (!stickers?.length) return;
-
-      const section = $("stickersSection");
-      const row = $("stickersRow");
-      row.innerHTML = "";
-
-      for (const s of stickers) {
-        const id = s.sticker_id ?? s.stickerId;
-        const wear = s.wear ?? null;
-        const slot = s.slot ?? null;
-
-        let meta = null;
-        try { meta = await findSticker(id); } catch {}
-
-        const chip = document.createElement("div");
-        chip.className = "sticker-chip";
-        chip.style.position = "relative";
-
-        if (meta?.image) {
-          const img = document.createElement("img");
-          img.src = meta.image;
-          img.alt = meta.name || "Sticker";
-          img.loading = "lazy";
-          chip.appendChild(img);
-        } else {
-          const fallback = document.createElement("div");
-          fallback.style.cssText = "width:52px;height:52px;display:grid;place-items:center;font-size:22px;opacity:.3";
-          fallback.textContent = "◈";
-          chip.appendChild(fallback);
+          if (
+            data &&
+            typeof data === "object"
+          ) {
+            return data;
+          }
         }
 
-        const name = document.createElement("div");
-        name.className = "sticker-chip-name";
-        name.textContent = meta?.name || `Sticker #${id}`;
-        chip.appendChild(name);
+      } catch (error) {
 
-        if (wear != null && wear > 0) {
-          const wearEl = document.createElement("div");
-          wearEl.className = "sticker-chip-wear";
-          wearEl.textContent = Math.round(wear * 100) + "% worn";
-          chip.appendChild(wearEl);
-        }
+        console.debug(
+          "Inspect decoder unavailable",
+          error
+        );
 
-        if (slot != null) {
-          const slotEl = document.createElement("div");
-          slotEl.className = "sticker-slot";
-          slotEl.textContent = slot + 1;
-          chip.appendChild(slotEl);
-        }
-
-        row.appendChild(chip);
       }
 
-      section.classList.add("has-stickers");
+      return {};
     }
 
-    /* ── Main init ───────────────────────────────────────────── */
+
+    /*
+      Open the Steam inspect link.
+      This remains automatic, but there is
+      no visible inspect UI.
+    */
+    function openSteam(link) {
+
+      try {
+
+        window.location.href = link;
+
+      } catch (error) {
+
+        console.error(
+          "Steam launch failed",
+          error
+        );
+
+      }
+    }
+
+
     async function init() {
-      const params = new URLSearchParams(window.location.search);
-      const encoded = params.get("link");
 
-      if (!encoded) {
-        setText("itemName", "No inspect link");
-        setText("itemSub", "This page was opened without a Steam inspection URI.");
-        setStatus("error", "No link");
-        $("launchButton").disabled = true;
+      const params =
+        new URLSearchParams(
+          window.location.search
+        );
+
+      const inspectLink =
+        params.get("link");
+
+
+      if (!inspectLink) {
+
+        document.querySelector(
+          "#placeholder strong"
+        ).textContent =
+          "No inspect link";
+
+        document.querySelector(
+          ".loading-dot"
+        ).style.display =
+          "none";
+
         return;
       }
 
-      const inspectLink = encoded.trim();
-      setStatus("loading", "Decoding");
 
-      // Wire up manual launch + copy before anything async
-      $("launchButton").addEventListener("click", () => {
-        openSteamModal(inspectLink, $("itemName").textContent);
-        window.location.href = inspectLink;
-      });
+      const link =
+        inspectLink.trim();
 
-      $("copyButton").addEventListener("click", async () => {
-        try {
-          await navigator.clipboard.writeText(inspectLink);
-          $("copyButton").textContent = "Copied ✓";
-          setTimeout(() => $("copyButton").textContent = "Copy link", 1400);
-        } catch {
-          showError("Clipboard access was blocked. Copy the link manually.");
-        }
-      });
 
       try {
-        // Decode inspect link
-        const data = await decodeInspect(inspectLink);
 
-        const defindex   = data.defindex   ?? data.def_index   ?? null;
-        const paintindex = data.paintindex  ?? data.paint_index  ?? null;
-        const paintseed  = data.paintseed   ?? data.paint_seed   ?? null;
-        const floatvalue = data.floatvalue  ?? data.float_value  ?? data.paintwear ?? data.paint_wear ?? null;
-        const ownerId    = data.owner_id    ?? data.ownerId      ?? null;
-        const assetId    = data.asset_id    ?? data.assetId      ?? data.itemid    ?? data.item_id   ?? null;
-        const stickers   = data.stickers    ?? data.Stickers     ?? [];
+        /*
+          Decode inspect link
+        */
+        const data =
+          await decodeInspect(link);
 
-        // Look up skin catalog concurrently with sticker lookups
-        let skin = null;
-        try { skin = await findSkin(defindex, paintindex); } catch (e) {
-          console.debug("Skin lookup failed:", e);
-        }
 
-        // Item name & sub
-        const displayName =
-          data.full_item_name ||
-          data.market_hash_name ||
-          data.item_name_string ||
-          skin?.name ||
-          "CS2 item";
+        const defindex =
+          data.defindex ??
+          data.def_index ??
+          null;
 
-        const tier = wearTier(floatvalue);
 
-        setText("itemName", displayName);
+        const paintindex =
+          data.paintindex ??
+          data.paint_index ??
+          null;
 
-        const parts = [
-          skin?.rarity?.name || data.rarity_name || null,
-          data.quality_name  || null,
-          skin?.category?.name || null,
-        ].filter(Boolean);
 
-        setText("itemSub", parts.join(" · ") || "Steam inspection target");
+        /*
+          Find matching skin
+        */
+        const skin =
+          await findSkin(
+            defindex,
+            paintindex
+          );
 
-        // Wear badge
-        if (tier) renderWearBadge(floatvalue);
 
-        // Float value + bar
-        const floatStr = floatvalue != null ? Number(floatvalue).toFixed(7) : null;
-        setText("floatValue", floatStr ?? "—");
-        if (floatvalue != null) renderFloatBar(floatvalue, skin?.min_float, skin?.max_float);
-
-        setText("paintSeed",  paintseed  != null ? paintseed  : "—");
-        setText("paintIndex", paintindex != null ? paintindex : "—");
-        setText("defIndex",   defindex   != null ? defindex   : "—");
-        setText("ownerId",    ownerId  || "—");
-        setText("assetId",    assetId  || "—");
-
-        // Image
+        /*
+          Load item image
+        */
         if (skin?.image) {
-          const img = $("itemImage");
-          const ph  = $("imagePlaceholder");
-          img.onload  = () => {
-            ph.style.display  = "none";
-            img.style.display = "block";
+
+          const image =
+            document.querySelector(
+              "#itemImage"
+            );
+
+          const placeholder =
+            document.querySelector(
+              "#placeholder"
+            );
+
+
+          image.onload = () => {
+
+            /*
+              Force image to be shown
+              only after it has loaded.
+            */
+            image.style.display =
+              "block";
+
+            placeholder.style.display =
+              "none";
+
           };
-          img.onerror = () => {
-            ph.querySelector("strong").textContent = "Image unavailable";
-            ph.querySelector("span").textContent   = "Could not load artwork.";
+
+
+          image.onerror = () => {
+
+            placeholder.querySelector(
+              "strong"
+            ).textContent =
+              "Image unavailable";
+
+            placeholder.querySelector(
+              ".loading-dot"
+            ).style.display =
+              "none";
+
           };
-          img.src = skin.image;
+
+
+          image.src =
+            skin.image;
+
         } else {
-          const ph = $("imagePlaceholder");
-          ph.querySelector("strong").textContent = defindex != null
-            ? "Image unavailable" : "Legacy link";
-          ph.querySelector("span").textContent = defindex != null
-            ? "No catalog artwork found." : "S/A/D links don't carry skin data.";
+
+          document.querySelector(
+            "#placeholder strong"
+          ).textContent =
+            "Item preview unavailable";
+
+          document.querySelector(
+            ".loading-dot"
+          ).style.display =
+            "none";
         }
 
-        // Stickers
-        if (stickers.length) await renderStickers(stickers);
 
-        // Enable launch
-        $("launchButton").disabled = false;
-        setStatus("ready", "Ready");
+        /*
+          Automatically launch Steam shortly
+          after the item has loaded.
+        */
+        setTimeout(
+          () => openSteam(link),
+          700
+        );
 
-        // Auto-launch: fire link + show popup simultaneously
-        setTimeout(() => {
-          openSteamModal(inspectLink, displayName);
-          try { window.location.href = inspectLink; } catch {}
-        }, 600);
 
-      } catch (e) {
-        console.error(e);
-        setText("itemName", "Inspect link");
-        setText("itemSub", "Could not decode item details in-browser.");
-        showError("The link is intact and will still open in Steam, but item details couldn't be read here.");
-        $("launchButton").disabled = false;
-        setStatus("error", "Partial decode");
+      } catch (error) {
 
-        // Still auto-launch even on decode failure
-        setTimeout(() => {
-          openSteamModal(inspectLink, "CS2 item inspect");
-          try { window.location.href = inspectLink; } catch {}
-        }, 600);
+        console.error(error);
+
+        document.querySelector(
+          "#placeholder strong"
+        ).textContent =
+          "Unable to load item";
+
+        document.querySelector(
+          ".loading-dot"
+        ).style.display =
+          "none";
+
+
+        /*
+          Still open Steam even if
+          the catalog lookup fails.
+        */
+        setTimeout(
+          () => openSteam(link),
+          500
+        );
+
       }
+
     }
 
+
     init();
+
   </script>
+
 </body>
 </html>
