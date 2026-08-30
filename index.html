@@ -167,7 +167,7 @@
   .value.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;letter-spacing:-.01em}
 
   .float-bar{margin-top:7px;height:4px;border-radius:999px;
-    background:linear-gradient(90deg,#37d99b 0%,#7c7ff7 15%,#f5c451 38%,#fb923c 45%,#fb7c8c 100%);
+    background:linear-gradient(90deg,#22c55e 0%,#84cc16 7%,#eab308 15%,#f97316 38%,#ef4444 45%,#dc2626 100%);
     position:relative;display:none}
   .float-bar.visible{display:block}
   .float-cursor{
@@ -659,50 +659,15 @@
     $("stickersSection").classList.add("visible");
   }
 
-  /* ── CSFloat live listing lookup ──────────────────────────────
-     CSFloat listing IDs (csfloat.com/item/{id}) are internal and
-     unrelated to the Steam asset ID, so the only reliable way to
-     find *this exact* listing is to ask CSFloat's own API for
-     active listings of this market_hash_name, then match by
-     asset_id client-side. If the API can't be reached (CORS/
-     network) or the item isn't currently listed, we fall back to
-     opening CSFloat itself so the person can search manually.
+  /* ── CSFloat listing ───────────────────────────────────────────
+     CSFloat's API doesn't support direct browser-side calls (no
+     CORS), so we can't reliably resolve the exact live listing ID
+     from here. This just opens CSFloat with the item's name so the
+     person can search for it themselves.
   ──────────────────────────────────────────────────────────── */
-  async function findLiveListingId(marketHashName, assetId) {
-    const url = `https://csfloat.com/api/v1/listings?market_hash_name=${encodeURIComponent(marketHashName)}&limit=50`;
-    const r = await fetch(url, { headers: { "Accept": "application/json" } });
-    if (!r.ok) throw new Error(`CSFloat responded ${r.status}`);
-    const data = await r.json();
-    const list = Array.isArray(data) ? data : (data?.data ?? data?.listings ?? []);
-    const match = list.find(l => String(l?.item?.asset_id) === String(assetId));
-    return match?.id ?? null;
-  }
-
-  const SPINNER_SVG = '<svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-9-9"/></svg>';
-
-  async function openListing(marketHashName, assetId) {
-    const btn = $("openListingBtn");
-    const original = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = `${SPINNER_SVG} Searching…`;
-
-    try {
-      const listingId = await findLiveListingId(marketHashName, assetId);
-      if (listingId) {
-        window.open(`https://csfloat.com/item/${listingId}`, "_blank", "noopener,noreferrer");
-        showListingNote("Opened the live CSFloat listing for this exact item.", "success");
-      } else {
-        window.open("https://csfloat.com/", "_blank", "noopener,noreferrer");
-        showListingNote(`Not currently listed on CSFloat (or no match found) — opened CSFloat so you can search <strong>“${marketHashName}”</strong> manually.`, "warn");
-      }
-    } catch (e) {
-      console.debug("Listing lookup failed:", e);
-      window.open("https://csfloat.com/", "_blank", "noopener,noreferrer");
-      showListingNote(`Couldn't verify live (network or CORS restriction) — opened CSFloat so you can search <strong>“${marketHashName}”</strong> manually.`, "warn");
-    } finally {
-      btn.disabled = false;
-      btn.innerHTML = original;
-    }
+  function openListing(marketHashName) {
+    window.open("https://csfloat.com/", "_blank", "noopener,noreferrer");
+    showListingNote(`Opened CSFloat — search for <strong>“${marketHashName}”</strong> to find this listing.`);
   }
 
   /* ── main ──────────────────────────────────────────────────── */
@@ -776,12 +741,10 @@
       setText("assetId",    assetId  || "—");
 
       // Wire the "Open Listing" button now that we know the item's
-      // market_hash_name + asset_id.
+      // market_hash_name.
       const marketHashName = data.market_hash_name || name;
-      if (assetId) {
-        $("openListingBtn").disabled = false;
-        $("openListingBtn").addEventListener("click", () => openListing(marketHashName, assetId));
-      }
+      $("openListingBtn").disabled = false;
+      $("openListingBtn").addEventListener("click", () => openListing(marketHashName));
 
       if (skin?.image) {
         const img = $("itemImage");
