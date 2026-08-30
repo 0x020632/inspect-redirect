@@ -5,344 +5,759 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#080b12" />
   <title>CSFloat Inspector</title>
-
   <style>
-    :root {
-      --bg:     #070a10;
-      --border: rgba(148, 163, 184, 0.14);
-      --accent: #818cf8;
-      --muted:  #707c90;
-
-      /* driven by JS after skin category is known */
-      --card-w: 720px;
-      --card-h: 400px;
+    :root{
+      --bg:#070a10;
+      --bg-2:#0b0f17;
+      --border:rgba(148,163,184,.14);
+      --text:#f4f7fb;
+      --muted:#8995a8;
+      --muted-2:#626e82;
+      --accent:#6366f1;
+      --accent-2:#818cf8;
+      --accent-glow:rgba(99,102,241,.20);
+      --success:#34d399;
+      --danger:#fb7185;
+      --shadow:0 30px 90px rgba(0,0,0,.46);
     }
 
-    *, *::before, *::after { box-sizing: border-box; }
-    html, body { width: 100%; min-height: 100%; margin: 0; }
-
-    body {
-      font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-      color: #eef2f7;
+    *{box-sizing:border-box}
+    html,body{min-height:100%;margin:0}
+    body{
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      color:var(--text);
       background:
-        radial-gradient(circle at 50% 15%, rgba(99,102,241,.10), transparent 35%),
-        linear-gradient(180deg, #0b0f17, #070a10);
-      overflow: hidden;
+        radial-gradient(circle at 50% 15%,rgba(99,102,241,.10),transparent 32%),
+        radial-gradient(circle at 12% 80%,rgba(59,130,246,.05),transparent 28%),
+        linear-gradient(180deg,var(--bg-2),var(--bg));
+      overflow-x:hidden;
     }
-
-    /* subtle grid overlay */
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      opacity: .18;
+    body::before{
+      content:"";position:fixed;inset:0;pointer-events:none;opacity:.22;
       background-image:
-        linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px);
-      background-size: 32px 32px;
-      mask-image: linear-gradient(to bottom, black, transparent 85%);
+        linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);
+      background-size:32px 32px;
+      mask-image:linear-gradient(to bottom,black,transparent 75%);
     }
 
-    .page {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
+    /* ── layout ─────────────────────────────────────────────── */
+    .shell{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:48px 18px}
+    .wrap{width:min(740px,100%)}
+
+    .brand{
+      display:flex;align-items:center;gap:10px;
+      margin:0 0 18px 4px;
+      color:#aeb8c9;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+    }
+    .brand-dot{
+      width:8px;height:8px;border-radius:50%;
+      background:var(--accent-2);box-shadow:0 0 16px var(--accent-glow);
     }
 
-    /* ─── card ──────────────────────────────────────────────── */
-    .card {
-      position: relative;
-      width:  min(var(--card-w), 100%);
-      height: min(var(--card-h), 85vh);
-
-      /* smoothly morph between shapes */
-      transition:
-        width  .55s cubic-bezier(.4, 0, .2, 1),
-        height .55s cubic-bezier(.4, 0, .2, 1);
-
-      border-radius: 24px;
-      background: linear-gradient(180deg, rgba(18,24,37,.96), rgba(9,13,21,.98));
-      border: 1px solid var(--border);
-      box-shadow:
-        0 40px 100px rgba(0,0,0,.55),
-        inset 0 0 0 1px rgba(255,255,255,.015);
-      overflow: hidden;
+    /* ── card ───────────────────────────────────────────────── */
+    .card{
+      position:relative;overflow:hidden;
+      border:1px solid var(--border);border-radius:24px;
+      background:linear-gradient(180deg,rgba(18,24,37,.93),rgba(10,14,22,.96));
+      box-shadow:var(--shadow),inset 0 0 0 1px rgba(255,255,255,.01);
+      backdrop-filter:blur(18px);
+    }
+    .card::before{
+      content:"";position:absolute;left:0;right:0;top:0;height:1px;
+      background:linear-gradient(90deg,transparent,rgba(129,140,248,.65),transparent);
     }
 
-    /* top shimmer line */
-    .card::before {
-      content: "";
-      position: absolute;
-      top: 0; left: 10%; right: 10%;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(129,140,248,.65), transparent);
+    /* ── header ─────────────────────────────────────────────── */
+    .top{
+      padding:22px 26px 18px;border-bottom:1px solid var(--border);
+      display:flex;align-items:center;justify-content:space-between;gap:18px;
+    }
+    .eyebrow{color:var(--muted);font-size:11px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;margin-bottom:6px}
+    .title{margin:0;font-size:20px;line-height:1.2;letter-spacing:-.02em;font-weight:760}
+
+    .status{
+      display:inline-flex;align-items:center;gap:8px;
+      border:1px solid rgba(52,211,153,.17);background:rgba(52,211,153,.07);color:#7eeac1;
+      border-radius:999px;padding:6px 10px;font-size:11px;font-weight:700;white-space:nowrap;
+      transition:all .3s;
+    }
+    .status.loading{border-color:rgba(129,140,248,.25);background:rgba(99,102,241,.07);color:var(--accent-2)}
+    .status.error  {border-color:rgba(251,113,133,.2); background:rgba(251,113,133,.06);color:#f6a0af}
+    .status-dot{
+      width:6px;height:6px;border-radius:50%;
+      background:var(--success);box-shadow:0 0 10px rgba(52,211,153,.55);transition:background .3s,box-shadow .3s;
+    }
+    .status.loading .status-dot{background:var(--accent-2);box-shadow:0 0 10px rgba(129,140,248,.5);animation:blink 1.2s infinite}
+    .status.error   .status-dot{background:var(--danger);box-shadow:0 0 10px rgba(251,113,133,.45)}
+    @keyframes blink{0%,100%{opacity:.35}50%{opacity:1}}
+
+    /* ── hero ───────────────────────────────────────────────── */
+    .hero{
+      display:grid;
+      grid-template-columns:260px 1fr;
+      gap:24px;
+      padding:26px 26px 22px;
     }
 
-    /* ─── image area ─────────────────────────────────────────── */
-    .image-area {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    /* ── image box (height adapts per weapon category) ──────── */
+    .image-box{
+      height:var(--img-h, 230px);       /* JS sets this */
+      min-height:160px;
+      border:1px solid var(--border);
+      border-radius:16px;
+      background:
+        radial-gradient(circle at 50% 50%,rgba(99,102,241,.12),transparent 55%),
+        linear-gradient(180deg,rgba(255,255,255,.014),rgba(255,255,255,.006));
+      overflow:hidden;
+      position:relative;
+      transition:height .5s cubic-bezier(.4,0,.2,1);
     }
 
-    /* soft accent glow behind the weapon */
-    .image-glow {
-      position: absolute;
-      width: 65%; height: 55%;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(99,102,241,.09), transparent 70%);
-      filter: blur(28px);
-      pointer-events: none;
+    #itemImage{
+      display:none;          /* shown via onload */
+      position:absolute;
+      inset:0;
+      width:100%;height:100%;
+      object-fit:contain;
+      padding:18px;
+      filter:drop-shadow(0 16px 26px rgba(0,0,0,.55));
+      animation:imgIn .4s ease forwards;
+    }
+    @keyframes imgIn{from{opacity:0;transform:scale(.93)}to{opacity:1;transform:scale(1)}}
+
+    .image-placeholder{
+      position:absolute;inset:0;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      gap:8px;text-align:center;color:var(--muted-2);padding:24px;
+    }
+    .placeholder-icon{
+      width:40px;height:40px;border-radius:12px;display:grid;place-items:center;
+      border:1px solid var(--border);background:rgba(255,255,255,.02);color:#7d8aa0;font-size:18px;
+    }
+    .image-placeholder strong{color:#aab4c4;font-size:12px}
+    .image-placeholder span{font-size:11px}
+
+    /* ── details column ─────────────────────────────────────── */
+    .details{min-width:0;display:flex;flex-direction:column}
+
+    .item-name{
+      font-size:24px;line-height:1.08;letter-spacing:-.03em;
+      margin:0 0 5px;font-weight:790;
     }
 
-    #itemImage {
-      display: none;         /* shown only after onload */
-      position: relative;    /* above glow */
-      z-index: 1;
+    .wear-badge{
+      display:inline-block;padding:3px 8px;border-radius:6px;
+      font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+      margin-bottom:10px;
+      background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);color:var(--muted);
+    }
+    .wear-badge.fn{background:rgba(52,211,153,.10);border-color:rgba(52,211,153,.2);color:#7eeac1}
+    .wear-badge.mw{background:rgba(99,102,241,.10);border-color:rgba(99,102,241,.2);color:var(--accent-2)}
+    .wear-badge.ft{background:rgba(234,179,8,.09);border-color:rgba(234,179,8,.18);color:#fde047}
+    .wear-badge.ww{background:rgba(251,146,60,.09);border-color:rgba(251,146,60,.18);color:#fdba74}
+    .wear-badge.bs{background:rgba(251,113,133,.09);border-color:rgba(251,113,133,.18);color:#fca5a5}
 
-      /* fill the card, never crop */
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      object-position: center;
-      padding: 24px;
+    .item-sub{color:var(--muted);font-size:12px;margin-bottom:16px;min-height:16px}
 
-      filter:
-        drop-shadow(0 22px 34px rgba(0,0,0,.65))
-        drop-shadow(0  0   22px rgba(99,102,241,.07));
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .stat{
+      min-width:0;border:1px solid var(--border);border-radius:12px;
+      padding:11px 12px;background:rgba(255,255,255,.016);
+    }
+    .label{color:var(--muted-2);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
+    .value{color:#e7ecf4;font-size:13px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .value.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px}
 
-      user-select: none;
-      -webkit-user-drag: none;
-
-      animation: itemIn .4s ease forwards;
+    /* float bar */
+    .float-bar{margin-top:6px;height:4px;border-radius:999px;
+      background:linear-gradient(90deg,#34d399 0%,#818cf8 15%,#fde047 38%,#fdba74 45%,#fca5a5 100%);
+      position:relative;display:none}
+    .float-bar.visible{display:block}
+    .float-cursor{
+      position:absolute;top:50%;transform:translate(-50%,-50%);
+      width:9px;height:9px;border-radius:50%;
+      background:#fff;box-shadow:0 0 0 2px rgba(0,0,0,.55);
+      transition:left .4s cubic-bezier(.34,1.56,.64,1);
     }
 
-    @keyframes itemIn {
-      from { opacity: 0; transform: scale(.94); }
-      to   { opacity: 1; transform: scale(1);   }
+    /* ── divider ────────────────────────────────────────────── */
+    .divider{height:1px;background:var(--border);margin:0 26px}
+
+    /* ── stickers ───────────────────────────────────────────── */
+    .stickers-section{padding:18px 26px;border-bottom:1px solid var(--border);display:none}
+    .stickers-section.visible{display:block}
+    .stickers-header{font-size:11px;font-weight:760;letter-spacing:.09em;text-transform:uppercase;color:#b6c0d0;margin-bottom:10px}
+    .stickers-row{display:flex;gap:9px;flex-wrap:wrap}
+
+    .sticker-chip{
+      position:relative;
+      display:flex;flex-direction:column;align-items:center;gap:5px;
+      padding:9px 11px;border:1px solid var(--border);border-radius:12px;
+      background:rgba(255,255,255,.016);min-width:68px;max-width:96px;
+    }
+    .sticker-chip img{width:48px;height:48px;object-fit:contain;filter:drop-shadow(0 3px 7px rgba(0,0,0,.4))}
+    .sticker-chip-name{
+      font-size:9px;font-weight:700;color:var(--muted);text-align:center;line-height:1.3;
+      max-width:78px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+    }
+    .sticker-chip-wear{font-size:9px;color:var(--muted-2);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+    .sticker-slot{
+      position:absolute;top:4px;right:4px;
+      width:15px;height:15px;border-radius:50%;
+      background:rgba(0,0,0,.6);font-size:8px;font-weight:700;color:var(--muted-2);
+      display:grid;place-items:center;
     }
 
-    /* ─── placeholder ────────────────────────────────────────── */
-    .placeholder {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 9px;
-      color: var(--muted);
-      font-size: 12px;
-      text-align: center;
-      z-index: 2;
+    /* ── actions ────────────────────────────────────────────── */
+    .actions-section{padding:20px 26px 22px}
+    .actions-row{display:flex;gap:9px}
+
+    button{appearance:none;border:0;cursor:pointer;font:inherit}
+
+    .btn-primary{
+      flex:1;display:flex;align-items:center;justify-content:center;gap:8px;
+      padding:11px 14px;border-radius:12px;
+      background:linear-gradient(180deg,#7477f5,#5d60e9);
+      color:#fff;font-size:13px;font-weight:760;
+      box-shadow:0 8px 22px rgba(99,102,241,.22);
+      transition:transform .15s,filter .15s,box-shadow .15s;
+    }
+    .btn-primary:hover{transform:translateY(-1px);filter:brightness(1.06);box-shadow:0 12px 28px rgba(99,102,241,.30)}
+    .btn-primary:active{transform:translateY(0)}
+    .btn-primary:disabled{opacity:.42;pointer-events:none}
+
+    .btn-secondary{
+      padding:11px 14px;border-radius:12px;
+      border:1px solid var(--border);background:rgba(255,255,255,.022);
+      color:#aab4c4;font-size:13px;font-weight:700;
+      transition:background .14s,color .14s;
+    }
+    .btn-secondary:hover{background:rgba(255,255,255,.044);color:#e1e7ef}
+
+    .error-box{
+      display:none;margin-top:11px;padding:10px 12px;border-radius:11px;
+      border:1px solid rgba(251,113,133,.16);background:rgba(251,113,133,.055);
+      color:#f6a0af;font-size:11px;line-height:1.45;
     }
 
-    .placeholder-icon {
-      width: 44px; height: 44px;
-      border-radius: 14px;
-      display: grid; place-items: center;
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,.02);
-      color: #8995a8;
-      font-size: 20px;
+    .footer{padding:0 26px 20px;color:#566276;font-size:10px;text-align:center}
+
+    /* ── Steam modal ─────────────────────────────────────────── */
+    .steam-overlay{
+      position:fixed;inset:0;
+      background:rgba(4,6,11,.74);backdrop-filter:blur(14px) saturate(.65);
+      z-index:200;display:grid;place-items:center;padding:24px;
+      opacity:0;transition:opacity .22s;pointer-events:none;
     }
+    .steam-overlay.open{opacity:1;pointer-events:all}
 
-    .placeholder strong { color: #aeb7c7; font-size: 13px; }
-
-    .loading-dot {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: var(--accent);
-      box-shadow: 0 0 14px rgba(129,140,248,.7);
-      animation: pulse 1.2s infinite;
+    .steam-dialog{
+      width:min(420px,100%);
+      border:1px solid var(--border);border-radius:20px;
+      background:linear-gradient(180deg,rgba(20,26,40,.99),rgba(11,15,24,.99));
+      box-shadow:0 40px 90px rgba(0,0,0,.7),inset 0 0 0 1px rgba(255,255,255,.012);
+      overflow:hidden;
+      transform:translateY(12px) scale(.97);opacity:0;
+      transition:transform .28s cubic-bezier(.34,1.4,.64,1),opacity .22s;
     }
+    .steam-overlay.open .steam-dialog{transform:translateY(0) scale(1);opacity:1}
 
-    @keyframes pulse {
-      0%, 100% { opacity: .35; transform: scale(.8); }
-      50%       { opacity:  1; transform: scale(1);  }
+    .steam-shimmer{height:1px;background:linear-gradient(90deg,transparent,rgba(129,140,248,.6),transparent)}
+
+    .steam-body{padding:26px 26px 22px}
+
+    .steam-head{display:flex;align-items:center;gap:13px;margin-bottom:16px}
+    .steam-badge{
+      width:46px;height:46px;border-radius:13px;flex-shrink:0;
+      background:rgba(99,102,241,.12);border:1px solid rgba(129,140,248,.2);
+      display:grid;place-items:center;font-size:20px;
     }
+    .steam-title{font-size:17px;font-weight:790;letter-spacing:-.025em;margin:0 0 2px}
+    .steam-sub{font-size:12px;color:var(--muted);margin:0}
 
-    /* ─── responsive ─────────────────────────────────────────── */
-    @media (max-width: 600px) {
-      .page { padding: 12px; }
-      .card { border-radius: 20px; }
-      #itemImage { padding: 12px; }
+    .steam-countdown{
+      display:flex;align-items:center;gap:10px;
+      padding:11px 13px;border-radius:11px;
+      border:1px solid var(--border);background:rgba(255,255,255,.016);
+      margin-bottom:16px;
+    }
+    .ring{position:relative;width:30px;height:30px;flex-shrink:0}
+    .ring svg{position:absolute;inset:0;transform:rotate(-90deg)}
+    .ring circle{fill:none;stroke:rgba(129,140,248,.15);stroke-width:3}
+    .ring circle.prog{stroke:var(--accent-2);stroke-linecap:round;transition:stroke-dashoffset .95s linear}
+    .ring-num{
+      position:absolute;inset:0;display:grid;place-items:center;
+      font-size:10px;font-weight:760;color:var(--accent-2);
+      font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    }
+    .countdown-msg{font-size:12px;color:var(--muted);line-height:1.4}
+    .countdown-msg strong{color:var(--text);font-weight:660}
+
+    .steam-actions{display:flex;gap:8px}
+    .steam-actions .btn-primary{font-size:12px;padding:10px 13px}
+    .steam-actions .btn-secondary{font-size:12px;padding:10px 13px}
+
+    /* ── responsive ─────────────────────────────────────────── */
+    @media(max-width:680px){
+      .shell{padding:20px 12px}
+      .hero{grid-template-columns:1fr;gap:16px}
+      .image-box{height:var(--img-h-mobile, 200px) !important}
+      .top,.hero,.stickers-section,.actions-section{padding-left:18px;padding-right:18px}
+      .divider{margin:0 18px}
+      .footer{padding:0 18px 16px}
+      .status{display:none}
+    }
+    @media(max-width:400px){
+      .actions-row{flex-direction:column}
+      .grid{grid-template-columns:1fr}
+      .item-name{font-size:20px}
     }
   </style>
 </head>
-
 <body>
-  <main class="page">
-    <section class="card" id="card">
 
-      <div class="image-glow"></div>
-
-      <div class="image-area">
-        <img id="itemImage" alt="CS2 item" />
-
-        <div id="placeholder" class="placeholder">
-          <div class="placeholder-icon">◈</div>
-          <strong>Loading item</strong>
-          <div class="loading-dot"></div>
+<!-- ── Steam modal ──────────────────────────────────────────── -->
+<div class="steam-overlay" id="steamOverlay">
+  <div class="steam-dialog">
+    <div class="steam-shimmer"></div>
+    <div class="steam-body">
+      <div class="steam-head">
+        <div class="steam-badge">⎋</div>
+        <div>
+          <p class="steam-title">Opening Steam</p>
+          <p class="steam-sub" id="modalSub">CS2 item inspect</p>
         </div>
       </div>
 
+      <div class="steam-countdown">
+        <div class="ring">
+          <svg viewBox="0 0 30 30" width="30" height="30">
+            <circle cx="15" cy="15" r="12"/>
+            <circle cx="15" cy="15" r="12" class="prog" id="ringCircle"
+              stroke-dasharray="75.4" stroke-dashoffset="0"/>
+          </svg>
+          <div class="ring-num" id="ringNum">3</div>
+        </div>
+        <div class="countdown-msg">
+          <strong>Steam should open automatically.</strong><br>
+          Nothing happened? Use the button below.
+        </div>
+      </div>
+
+      <div class="steam-actions">
+        <button class="btn-primary" id="modalLaunchBtn">Open in Steam ↗</button>
+        <button class="btn-secondary" id="modalDismissBtn">Dismiss</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── page ─────────────────────────────────────────────────── -->
+<main class="shell">
+  <div class="wrap">
+    <div class="brand"><span class="brand-dot"></span>CSFloat Inspector</div>
+
+    <section class="card">
+
+      <!-- header -->
+      <header class="top">
+        <div>
+          <div class="eyebrow">Item inspection</div>
+          <h1 class="title">Steam inspect request</h1>
+        </div>
+        <div class="status loading" id="statusBadge">
+          <span class="status-dot"></span>
+          <span id="statusText">Loading</span>
+        </div>
+      </header>
+
+      <!-- hero: image + details -->
+      <div class="hero">
+        <!-- image box -->
+        <div class="image-box" id="imageBox">
+          <img id="itemImage" alt="CS2 item" />
+          <div id="imgPlaceholder" class="image-placeholder">
+            <div class="placeholder-icon">◈</div>
+            <strong>Item preview</strong>
+            <span>Reading inspect link…</span>
+          </div>
+        </div>
+
+        <!-- details -->
+        <div class="details">
+          <div class="item-name" id="itemName">Loading…</div>
+          <div id="wearWrap"></div>
+          <div class="item-sub" id="itemSub">Reading the Steam inspect link</div>
+
+          <div class="grid">
+            <div class="stat">
+              <div class="label">Float value</div>
+              <div class="value" id="floatValue">—</div>
+              <div class="float-bar" id="floatBar"><div class="float-cursor" id="floatCursor"></div></div>
+            </div>
+            <div class="stat">
+              <div class="label">Paint seed</div>
+              <div class="value" id="paintSeed">—</div>
+            </div>
+            <div class="stat">
+              <div class="label">Paint index</div>
+              <div class="value" id="paintIndex">—</div>
+            </div>
+            <div class="stat">
+              <div class="label">Definition index</div>
+              <div class="value" id="defIndex">—</div>
+            </div>
+            <div class="stat">
+              <div class="label">Owner</div>
+              <div class="value mono" id="ownerId">—</div>
+            </div>
+            <div class="stat">
+              <div class="label">Asset</div>
+              <div class="value mono" id="assetId">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- stickers (shown only when present) -->
+      <div class="stickers-section" id="stickersSection">
+        <div class="stickers-header">Applied stickers</div>
+        <div class="stickers-row" id="stickersRow"></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- actions -->
+      <section class="actions-section">
+        <div class="actions-row">
+          <button class="btn-primary" id="launchBtn" disabled>Open in Steam ↗</button>
+          <button class="btn-secondary" id="copyBtn">Copy link</button>
+        </div>
+        <div class="error-box" id="errorBox"></div>
+      </section>
+
+      <div class="footer">CSFloat Inspector · Midnight</div>
     </section>
-  </main>
+  </div>
+</main>
 
-  <script type="module">
-    /* ── weapon category → card aspect ratio ─────────────────
-       Rifles / snipers = wide landscape rectangle
-       Pistols / SMGs   = medium
-       Knives / Gloves  = close to square
-    ────────────────────────────────────────────────────────── */
-    const CATEGORY_ASPECT = {
-      "Sniper Rifle": 3.1,
-      "Rifle":        2.6,
-      "Heavy":        2.4,
-      "SMG":          2.1,
-      "Pistol":       1.9,
-      "Knife":        1.4,
-      "Gloves":       1.25,
-    };
-    const DEFAULT_ASPECT = 2.2;
+<script type="module">
+  /* ── $ helper ──────────────────────────────────────────────── */
+  const $ = id => document.getElementById(id);
+  const setText = (id, v) => $(id).textContent = v ?? "—";
 
-    // Base width the card targets (px). On narrow viewports the card
-    // is constrained to 100% via the CSS min(), so we derive height
-    // from the *actual rendered* width, not this constant.
-    const BASE_W = 720;
+  /* ── status pill ───────────────────────────────────────────── */
+  function setStatus(state, text) {
+    $("statusBadge").className = "status" + (state !== "ready" ? " " + state : "");
+    $("statusText").textContent = text;
+  }
 
-    function applyAspect(aspect) {
-      const card    = document.getElementById("card");
-      const padding = 48; // 24px each side
-      const vw      = Math.min(window.innerWidth - padding, BASE_W);
-      const vh85    = window.innerHeight * 0.85;
+  function showError(msg) {
+    const b = $("errorBox");
+    b.textContent = msg;
+    b.style.display = "block";
+    setStatus("error", "Error");
+  }
 
-      // Ideal height for this ratio at this viewport width
-      const ideal = vw / aspect;
-      const h = Math.min(ideal, vh85);
-      // If height was clamped by viewport, derive the matching width
-      const w = h === vh85 ? h * aspect : vw;
+  /* ── wear ──────────────────────────────────────────────────── */
+  const WEAR_TIERS = [
+    {max:.07,  label:"Factory New",    cls:"fn"},
+    {max:.15,  label:"Minimal Wear",   cls:"mw"},
+    {max:.38,  label:"Field-Tested",   cls:"ft"},
+    {max:.45,  label:"Well-Worn",      cls:"ww"},
+    {max:1.00, label:"Battle-Scarred", cls:"bs"},
+  ];
+  function wearTier(f) {
+    const n = Number(f);
+    if (Number.isNaN(n)) return null;
+    return WEAR_TIERS.find(t => n <= t.max) ?? WEAR_TIERS.at(-1);
+  }
+  function renderWearBadge(f) {
+    const tier = wearTier(f);
+    if (!tier) return;
+    const el = document.createElement("span");
+    el.className = "wear-badge " + tier.cls;
+    el.textContent = tier.label;
+    $("wearWrap").appendChild(el);
+  }
+  function renderFloatBar(f, minF, maxF) {
+    const n = Number(f);
+    if (Number.isNaN(n)) return;
+    const lo = Number(minF ?? 0), hi = Number(maxF ?? 1);
+    const pct = Math.max(0, Math.min(100, ((n - lo) / (hi - lo)) * 100));
+    $("floatCursor").style.left = pct + "%";
+    $("floatBar").classList.add("visible");
+  }
 
-      card.style.setProperty("--card-w", w + "px");
-      card.style.setProperty("--card-h", h + "px");
-    }
+  /* ── adaptive image-box height per weapon category ──────────
+     Wide weapons (rifles, snipers) → shorter box (wider feel)
+     Compact weapons (knives, gloves) → taller box (square feel)
+  ──────────────────────────────────────────────────────────── */
+  const CATEGORY_IMG_H = {
+    "Sniper Rifle": 175,
+    "Rifle":        195,
+    "Heavy":        205,
+    "SMG":          215,
+    "Pistol":       228,
+    "Knife":        270,
+    "Gloves":       285,
+  };
+  const DEFAULT_IMG_H = 220;
 
-    /* ── ByMykel catalog ──────────────────────────────────── */
-    const BASE = "https://raw.githubusercontent.com/ByMykel/CSGO-API/main/public/api/en";
-    let skinCache = null;
+  function applyImageBoxHeight(category) {
+    const h = CATEGORY_IMG_H[category] ?? DEFAULT_IMG_H;
+    $("imageBox").style.setProperty("--img-h", h + "px");
+    // Mobile: slightly shorter across the board
+    $("imageBox").style.setProperty("--img-h-mobile", Math.round(h * 0.88) + "px");
+  }
 
-    async function getSkins() {
-      if (!skinCache) {
-        const r = await fetch(`${BASE}/skins.json`, { cache: "force-cache" });
-        if (!r.ok) throw new Error("Failed to load skins");
-        skinCache = await r.json();
+  /* ── ByMykel catalog ───────────────────────────────────────── */
+  const BASE = "https://raw.githubusercontent.com/ByMykel/CSGO-API/main/public/api/en";
+  let _skins = null, _stickers = null;
+
+  async function loadJSON(path) {
+    const r = await fetch(`${BASE}/${path}`, { cache: "force-cache" });
+    if (!r.ok) throw new Error(`Failed to fetch ${path}`);
+    return r.json();
+  }
+  async function getSkins()    { return _skins    ??= loadJSON("skins.json");    }
+  async function getStickers() { return _stickers ??= loadJSON("stickers.json"); }
+
+  async function findSkin(defindex, paintindex) {
+    if (defindex == null || paintindex == null) return null;
+    const list = await getSkins();
+    return list.find(s =>
+      Number(s?.weapon?.weapon_id) === Number(defindex) &&
+      Number(s?.paint_index)       === Number(paintindex)
+    ) ?? null;
+  }
+
+  async function findSticker(id) {
+    if (id == null) return null;
+    const list = await getStickers();
+    return list.find(s =>
+      Number(s?.sticker_id ?? s?.id?.replace?.("sticker-", "")) === Number(id)
+    ) ?? null;
+  }
+
+  /* ── inspect decoder ───────────────────────────────────────── */
+  function parseLegacy(link) {
+    const m = decodeURIComponent(link).match(
+      /[+/]csgo_econ_action_preview(?:%20|\s)\s*(?:S(\d+)A(\d+)D(\d+)|M(\d+)A(\d+)D(\d+))/i
+    );
+    if (!m) return null;
+    return { owner_id: m[1]||null, market_id: m[4]||null, asset_id: m[2]||m[5]||null, class_id: m[3]||m[6]||null };
+  }
+
+  async function decodeInspect(link) {
+    try {
+      const mod = await import("https://esm.sh/@csfloat/cs2-inspect-serializer@1.1.6");
+      if (typeof mod.decodeLink === "function") {
+        const d = await mod.decodeLink(link);
+        if (d && typeof d === "object") return d;
       }
-      return skinCache;
+    } catch(e) { console.debug("Modern decoder unavailable:", e); }
+    return parseLegacy(link) || {};
+  }
+
+  /* ── Steam modal ───────────────────────────────────────────── */
+  const CIRC = 75.4; // 2π×12
+  let _timer = null;
+
+  function openModal(link, label) {
+    $("modalSub").textContent = label || "CS2 item inspect";
+    $("steamOverlay").classList.add("open");
+
+    let rem = 3;
+    $("ringNum").textContent = rem;
+    $("ringCircle").style.strokeDashoffset = "0";
+    clearInterval(_timer);
+    _timer = setInterval(() => {
+      rem--;
+      $("ringNum").textContent = Math.max(0, rem);
+      $("ringCircle").style.strokeDashoffset = ((3 - rem) / 3) * CIRC;
+      if (rem <= 0) clearInterval(_timer);
+    }, 1000);
+
+    $("modalLaunchBtn").onclick = () => { window.location.href = link; };
+    $("modalDismissBtn").onclick = closeModal;
+    $("steamOverlay").onclick = e => { if (e.target === $("steamOverlay")) closeModal(); };
+  }
+
+  function closeModal() {
+    $("steamOverlay").classList.remove("open");
+    clearInterval(_timer);
+  }
+
+  /* ── sticker renderer ──────────────────────────────────────── */
+  async function renderStickers(stickers) {
+    if (!stickers?.length) return;
+    const row = $("stickersRow");
+    row.innerHTML = "";
+
+    for (const s of stickers) {
+      const id   = s.sticker_id ?? s.stickerId;
+      const wear = s.wear  ?? null;
+      const slot = s.slot  ?? null;
+      let meta = null;
+      try { meta = await findSticker(id); } catch {}
+
+      const chip = document.createElement("div");
+      chip.className = "sticker-chip";
+
+      if (meta?.image) {
+        const img = document.createElement("img");
+        img.src = meta.image; img.alt = meta.name || "Sticker"; img.loading = "lazy";
+        chip.appendChild(img);
+      } else {
+        const fb = document.createElement("div");
+        fb.style.cssText = "width:48px;height:48px;display:grid;place-items:center;font-size:20px;opacity:.28";
+        fb.textContent = "◈";
+        chip.appendChild(fb);
+      }
+
+      const nm = document.createElement("div");
+      nm.className = "sticker-chip-name";
+      nm.textContent = meta?.name || `#${id}`;
+      chip.appendChild(nm);
+
+      if (wear != null && wear > 0) {
+        const we = document.createElement("div");
+        we.className = "sticker-chip-wear";
+        we.textContent = Math.round(wear * 100) + "% worn";
+        chip.appendChild(we);
+      }
+
+      if (slot != null) {
+        const sl = document.createElement("div");
+        sl.className = "sticker-slot";
+        sl.textContent = slot + 1;
+        chip.appendChild(sl);
+      }
+
+      row.appendChild(chip);
+    }
+    $("stickersSection").classList.add("visible");
+  }
+
+  /* ── main ──────────────────────────────────────────────────── */
+  async function init() {
+    const params = new URLSearchParams(window.location.search);
+    const raw    = params.get("link");
+
+    if (!raw) {
+      setText("itemName", "No inspect link");
+      setText("itemSub",  "Open this page with a ?link= Steam inspect URI.");
+      setStatus("error", "No link");
+      $("launchBtn").disabled = true;
+      return;
     }
 
-    async function findSkin(defindex, paintindex) {
-      if (defindex == null || paintindex == null) return null;
-      const skins = await getSkins();
-      return skins.find(s =>
-        Number(s?.weapon?.weapon_id) === Number(defindex) &&
-        Number(s?.paint_index)       === Number(paintindex)
-      ) || null;
-    }
+    const link = raw.trim();
+    setStatus("loading", "Decoding");
 
-    /* ── inspect decoder ─────────────────────────────────── */
-    async function decodeInspect(link) {
+    // wire buttons early
+    $("launchBtn").addEventListener("click", () => {
+      openModal(link, $("itemName").textContent);
+      window.location.href = link;
+    });
+    $("copyBtn").addEventListener("click", async () => {
       try {
-        const mod = await import("https://esm.sh/@csfloat/cs2-inspect-serializer@1.1.6");
-        if (typeof mod.decodeLink === "function") {
-          const data = await mod.decodeLink(link);
-          if (data && typeof data === "object") return data;
-        }
-      } catch (e) {
-        console.debug("Decoder unavailable", e);
-      }
-      return {};
-    }
-
-    /* ── Steam launcher ──────────────────────────────────── */
-    function openSteam(link) {
-      try { window.location.href = link; }
-      catch (e) { console.error("Steam launch failed", e); }
-    }
-
-    /* ── main ────────────────────────────────────────────── */
-    async function init() {
-      // Start at a neutral default size while we load
-      applyAspect(DEFAULT_ASPECT);
-
-      const params      = new URLSearchParams(window.location.search);
-      const inspectLink = params.get("link");
-
-      if (!inspectLink) {
-        document.querySelector("#placeholder strong").textContent = "No inspect link";
-        document.querySelector(".loading-dot").style.display = "none";
-        return;
-      }
-
-      const link = inspectLink.trim();
-
-      try {
-        const data = await decodeInspect(link);
-
-        const defindex   = data.defindex   ?? data.def_index   ?? null;
-        const paintindex = data.paintindex  ?? data.paint_index  ?? null;
-        const skin       = await findSkin(defindex, paintindex);
-
-        // ── Resize card to match weapon category ────────────
-        const category = skin?.category?.name ?? null;
-        const aspect   = CATEGORY_ASPECT[category] ?? DEFAULT_ASPECT;
-        applyAspect(aspect);
-
-        // ── Load image ───────────────────────────────────────
-        if (skin?.image) {
-          const img = document.getElementById("itemImage");
-          const ph  = document.getElementById("placeholder");
-
-          img.onload = () => {
-            ph.style.display  = "none";
-            img.style.display = "block";
-          };
-
-          img.onerror = () => {
-            ph.querySelector("strong").textContent = "Image unavailable";
-            ph.querySelector(".loading-dot").style.display = "none";
-          };
-
-          img.src = skin.image;
-        } else {
-          document.querySelector("#placeholder strong").textContent =
-            category ? "Preview unavailable" : "Item preview unavailable";
-          document.querySelector(".loading-dot").style.display = "none";
-        }
-
-        setTimeout(() => openSteam(link), 700);
-
-      } catch (err) {
-        console.error(err);
-        document.querySelector("#placeholder strong").textContent = "Unable to load item";
-        document.querySelector(".loading-dot").style.display = "none";
-        setTimeout(() => openSteam(link), 500);
-      }
-    }
-
-    // Re-apply on window resize so the card stays proportional
-    window.addEventListener("resize", () => {
-      const card   = document.getElementById("card");
-      const aspect = parseFloat(card.dataset.aspect || DEFAULT_ASPECT);
-      if (!isNaN(aspect)) applyAspect(aspect);
+        await navigator.clipboard.writeText(link);
+        $("copyBtn").textContent = "Copied ✓";
+        setTimeout(() => $("copyBtn").textContent = "Copy link", 1400);
+      } catch { showError("Clipboard blocked — copy the link manually."); }
     });
 
-    init();
-  </script>
+    try {
+      const data = await decodeInspect(link);
+
+      const defindex   = data.defindex   ?? data.def_index   ?? null;
+      const paintindex = data.paintindex  ?? data.paint_index  ?? null;
+      const paintseed  = data.paintseed   ?? data.paint_seed   ?? null;
+      const floatvalue = data.floatvalue  ?? data.float_value  ?? data.paintwear ?? data.paint_wear ?? null;
+      const ownerId    = data.owner_id    ?? data.ownerId      ?? null;
+      const assetId    = data.asset_id    ?? data.assetId      ?? data.itemid    ?? data.item_id   ?? null;
+      const stickers   = data.stickers    ?? data.Stickers     ?? [];
+
+      let skin = null;
+      try { skin = await findSkin(defindex, paintindex); } catch(e) { console.debug("Skin lookup:", e); }
+
+      // ── Adaptive image box height ──────────────────────────
+      applyImageBoxHeight(skin?.category?.name ?? null);
+
+      // ── Name + sub ─────────────────────────────────────────
+      const name =
+        data.full_item_name   ||
+        data.market_hash_name ||
+        data.item_name_string ||
+        skin?.name            ||
+        "CS2 item";
+
+      setText("itemName", name);
+      setText("itemSub", [
+        skin?.rarity?.name || data.rarity_name || null,
+        data.quality_name  || null,
+        skin?.category?.name || null,
+      ].filter(Boolean).join(" · ") || "Steam inspection target");
+
+      // ── Wear badge + float bar ─────────────────────────────
+      renderWearBadge(floatvalue);
+      setText("floatValue", floatvalue != null ? Number(floatvalue).toFixed(7) : "—");
+      if (floatvalue != null) renderFloatBar(floatvalue, skin?.min_float, skin?.max_float);
+
+      // ── Stats ──────────────────────────────────────────────
+      setText("paintSeed",  paintseed  != null ? paintseed  : "—");
+      setText("paintIndex", paintindex != null ? paintindex : "—");
+      setText("defIndex",   defindex   != null ? defindex   : "—");
+      setText("ownerId",    ownerId  || "—");
+      setText("assetId",    assetId  || "—");
+
+      // ── Image ──────────────────────────────────────────────
+      if (skin?.image) {
+        const img = $("itemImage");
+        const ph  = $("imgPlaceholder");
+        img.onload  = () => { ph.style.display = "none"; img.style.display = "block"; };
+        img.onerror = () => {
+          ph.querySelector("strong").textContent = "Image unavailable";
+          ph.querySelector("span").textContent   = "Could not load artwork.";
+        };
+        img.src = skin.image;
+      } else {
+        $("imgPlaceholder").querySelector("strong").textContent =
+          defindex != null ? "Image unavailable" : "Legacy link";
+        $("imgPlaceholder").querySelector("span").textContent =
+          defindex != null ? "No catalog artwork found." : "S/A/D links don't carry skin data.";
+      }
+
+      // ── Stickers ───────────────────────────────────────────
+      if (stickers.length) await renderStickers(stickers);
+
+      // ── Ready ──────────────────────────────────────────────
+      $("launchBtn").disabled = false;
+      setStatus("ready", "Ready");
+
+      // Auto-open Steam + popup simultaneously
+      setTimeout(() => {
+        openModal(link, name);
+        try { window.location.href = link; } catch {}
+      }, 650);
+
+    } catch(e) {
+      console.error(e);
+      setText("itemName", "Inspect link");
+      setText("itemSub",  "Could not decode item details in-browser.");
+      showError("Link is intact and will open in Steam, but details couldn't be decoded here.");
+      $("launchBtn").disabled = false;
+      setTimeout(() => {
+        openModal(link, "CS2 item inspect");
+        try { window.location.href = link; } catch {}
+      }, 500);
+    }
+  }
+
+  init();
+</script>
 </body>
 </html>
